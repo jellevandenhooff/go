@@ -400,7 +400,7 @@ func GOGOARCH() (name, value string) {
 		return "GOPPC64", fmt.Sprintf("power%d", GOPPC64)
 	case "riscv64":
 		return "GORISCV64", fmt.Sprintf("rva%du64", GORISCV64)
-	case "wasm":
+	case "wasm", "wasm32":
 		return "GOWASM", GOWASM.String()
 	}
 	return "", ""
@@ -455,7 +455,7 @@ func gogoarchTags() []string {
 			list = append(list, GOARCH+"."+"rva23u64")
 		}
 		return list
-	case "wasm":
+	case "wasm", "wasm32":
 		var list []string
 		// SatConv is always enabled
 		list = append(list, GOARCH+".satconv")
