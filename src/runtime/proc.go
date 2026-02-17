@@ -277,7 +277,7 @@ func main() {
 	if isarchive || islibrary {
 		// A program compiled with -buildmode=c-archive or c-shared
 		// has a main, but it is not executed.
-		if GOARCH == "wasm" {
+		if GOARCH == "wasm" || GOARCH == "wasm32" {
 			// On Wasm, pause makes it return to the host.
 			// Unlike cgo callbacks where Ms are created on demand,
 			// on Wasm we have only one M. So we keep this M (and this
@@ -2942,7 +2942,7 @@ func newm1(mp *m) {
 //
 // The calling thread must itself be in a known-good state.
 func startTemplateThread() {
-	if GOARCH == "wasm" { // no threads on wasm yet
+	if GOARCH == "wasm" || GOARCH == "wasm32" { // no threads on wasm yet
 		return
 	}
 
@@ -4547,7 +4547,7 @@ func gdestroy(gp *g) {
 
 	dropg()
 
-	if GOARCH == "wasm" { // no threads yet on wasm
+	if GOARCH == "wasm" || GOARCH == "wasm32" { // no threads yet on wasm
 		gfput(pp, gp)
 		return
 	}
@@ -5629,7 +5629,7 @@ func Breakpoint() {
 //
 //go:nosplit
 func dolockOSThread() {
-	if GOARCH == "wasm" {
+	if GOARCH == "wasm" || GOARCH == "wasm32" {
 		return // no threads on wasm yet
 	}
 	gp := getg()
@@ -5681,7 +5681,7 @@ func lockOSThread() {
 //
 //go:nosplit
 func dounlockOSThread() {
-	if GOARCH == "wasm" {
+	if GOARCH == "wasm" || GOARCH == "wasm32" {
 		return // no threads on wasm yet
 	}
 	gp := getg()
@@ -6405,7 +6405,7 @@ func checkdead() {
 	// assumed to be running.
 	// One exception is Wasm, which is single-threaded. If we are
 	// in Go and all goroutines are blocked, it deadlocks.
-	if (islibrary || isarchive) && GOARCH != "wasm" {
+	if (islibrary || isarchive) && GOARCH != "wasm" && GOARCH != "wasm32" {
 		return
 	}
 
@@ -6511,7 +6511,7 @@ var forcegcperiod int64 = 2 * 60 * 1e9
 // haveSysmon indicates whether there is sysmon thread support.
 //
 // No threads on wasm yet, so no sysmon.
-const haveSysmon = GOARCH != "wasm"
+const haveSysmon = GOARCH != "wasm" && GOARCH != "wasm32"
 
 // Always runs without a P, so write barriers are not allowed.
 //

@@ -1151,7 +1151,7 @@ func (r *reader) funcExt(name *ir.Name, method *types.Sym) {
 	fn.Pragma = r.pragmaFlag()
 	r.linkname(name)
 
-	if buildcfg.GOARCH == "wasm" {
+	if buildcfg.GOARCH == "wasm" || buildcfg.GOARCH == "wasm32" {
 		importmod := r.String()
 		importname := r.String()
 		exportname := r.String()
@@ -3997,7 +3997,7 @@ func addTailCall(pos src.XPos, fn *ir.Func, recv ir.Node, method *types.Field) {
 
 	if recv.Type() != nil && recv.Type().IsPtr() && method.Type.Recv().Type.IsPtr() &&
 		method.Embedded != 0 &&
-		(types.IsInterfaceMethod(method.Type) && base.Ctxt.Arch.Name != "wasm" ||
+		(types.IsInterfaceMethod(method.Type) && base.Ctxt.Arch.Name != "wasm" && base.Ctxt.Arch.Name != "wasm32" ||
 			!types.IsInterfaceMethod(method.Type) && !unifiedHaveInlineBody(ir.MethodExprName(dot).Func)) &&
 		// TODO: implement wasm indirect tail calls
 		// TODO: do we need the ppc64le/dynlink restriction for interface tail calls?

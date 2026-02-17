@@ -69,6 +69,8 @@ var wasmFuncTypes = map[string]*wasmFuncType{
 	"_rt0_wasm_js":            {Params: []byte{}},                                         //
 	"_rt0_wasm_wasip1":        {Params: []byte{}},                                         //
 	"_rt0_wasm_wasip1_lib":    {Params: []byte{}},                                         //
+	"_rt0_wasm32_wasip1":      {Params: []byte{}},                                         //
+	"_rt0_wasm32_wasip1_lib":  {Params: []byte{}},                                         //
 	"wasm_export__start":      {},                                                         //
 	"wasm_export_run":         {Params: []byte{I32, I32}},                                 // argc, argv
 	"wasm_export_resume":      {Params: []byte{}},                                         //
@@ -423,10 +425,10 @@ func writeExportSec(ctxt *ld.Link, ldr *loader.Loader, lenHostImports int) {
 		var entry, entryExpName string
 		switch ctxt.BuildMode {
 		case ld.BuildModeExe:
-			entry = "_rt0_wasm_wasip1"
+			entry = fmt.Sprintf("_rt0_%s_wasip1", buildcfg.GOARCH)
 			entryExpName = "_start"
 		case ld.BuildModeCShared:
-			entry = "_rt0_wasm_wasip1_lib"
+			entry = fmt.Sprintf("_rt0_%s_wasip1_lib", buildcfg.GOARCH)
 			entryExpName = "_initialize"
 		}
 		s := ldr.Lookup(entry, 0)

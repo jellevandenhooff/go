@@ -43,7 +43,7 @@ func best(f func() time.Duration) time.Duration {
 }
 
 func main() {
-	if runtime.GOARCH == "wasm" {
+	if runtime.GOARCH == "wasm" || runtime.GOARCH == "wasm32" {
 		// TODO: upgrade wasm to do indirect tail calls
 		return
 	}
