@@ -146,14 +146,24 @@ func zeroRange(pp *objw.Progs, p *obj.Prog, off, cnt int64, state *uint32) *obj.
 	if cnt == 0 {
 		return p
 	}
-	if cnt%8 != 0 {
+
+	ptrSize := int64(types.PtrSize)
+	if cnt%ptrSize != 0 {
 		base.Fatalf("zerorange count not a multiple of widthptr %d", cnt)
 	}
 
-	for i := int64(0); i < cnt; i += 8 {
-		p = pp.Append(p, wasm.AGet, obj.TYPE_REG, wasm.REG_SP, 0, 0, 0, 0)
-		p = pp.Append(p, wasm.AI64Const, obj.TYPE_CONST, 0, 0, 0, 0, 0)
-		p = pp.Append(p, wasm.AI64Store, 0, 0, 0, obj.TYPE_CONST, 0, off+i)
+	if ptrSize == 4 {
+		for i := int64(0); i < cnt; i += 4 {
+			p = pp.Append(p, wasm.AGet, obj.TYPE_REG, wasm.REG_SP, 0, 0, 0, 0)
+			p = pp.Append(p, wasm.AI32Const, obj.TYPE_CONST, 0, 0, 0, 0, 0)
+			p = pp.Append(p, wasm.AI32Store, 0, 0, 0, obj.TYPE_CONST, 0, off+i)
+		}
+	} else {
+		for i := int64(0); i < cnt; i += 8 {
+			p = pp.Append(p, wasm.AGet, obj.TYPE_REG, wasm.REG_SP, 0, 0, 0, 0)
+			p = pp.Append(p, wasm.AI64Const, obj.TYPE_CONST, 0, 0, 0, 0, 0)
+			p = pp.Append(p, wasm.AI64Store, 0, 0, 0, obj.TYPE_CONST, 0, off+i)
+		}
 	}
 
 	return p

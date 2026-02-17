@@ -327,8 +327,10 @@
 // Miscellaneous
 (Convert ...) => (LoweredConvert ...)
 (IsNonNil p) => (I64Eqz (I64Eqz p))
-(IsInBounds ...) => (I64LtU ...)
-(IsSliceInBounds ...) => (I64LeU ...)
+(IsInBounds idx len) && config.PtrSize == 4 => (I64LtU (ZeroExt32to64 idx) (ZeroExt32to64 len))
+(IsInBounds idx len) => (I64LtU idx len)
+(IsSliceInBounds idx len) && config.PtrSize == 4 => (I64LeU (ZeroExt32to64 idx) (ZeroExt32to64 len))
+(IsSliceInBounds idx len) => (I64LeU idx len)
 (NilCheck ...) => (LoweredNilCheck ...)
 (GetClosurePtr ...) => (LoweredGetClosurePtr ...)
 (GetCallerPC ...) => (LoweredGetCallerPC ...)

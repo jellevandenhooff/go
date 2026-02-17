@@ -1632,7 +1632,7 @@ func initIntrinsics(cfg *intrinsicBuildConfig) {
 
 			return s.newValue3(ssa.OpCondSelect, types.Types[types.TINT], x, y, check)
 		},
-		sys.ArchAMD64, sys.ArchARM64, sys.ArchLoong64, sys.ArchPPC64, sys.ArchPPC64LE, sys.ArchWasm) // all with CMOV support.
+		sys.ArchAMD64, sys.ArchARM64, sys.ArchLoong64, sys.ArchPPC64, sys.ArchPPC64LE, sys.ArchWasm, sys.ArchWasm32) // all with CMOV support.
 	add("crypto/internal/constanttime", "boolToUint8",
 		func(s *state, n *ir.CallExpr, args []*ssa.Value) *ssa.Value {
 			return s.newValue1(ssa.OpCvtBoolToUint8, types.Types[types.TUINT8], args[0])

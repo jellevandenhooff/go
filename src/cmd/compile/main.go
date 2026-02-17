@@ -18,6 +18,7 @@ import (
 	"cmd/compile/internal/s390x"
 	"cmd/compile/internal/ssagen"
 	"cmd/compile/internal/wasm"
+	"cmd/compile/internal/wasm32"
 	"cmd/compile/internal/x86"
 	"fmt"
 	"internal/buildcfg"
@@ -40,6 +41,7 @@ var archInits = map[string]func(*ssagen.ArchInfo){
 	"riscv64":  riscv64.Init,
 	"s390x":    s390x.Init,
 	"wasm":     wasm.Init,
+	"wasm32":   wasm32.Init,
 }
 
 func main() {
