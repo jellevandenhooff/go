@@ -439,7 +439,7 @@ func SkipFlakyNet(t testing.TB) {
 // CPUIsSlow reports whether the CPU running the test is suspected to be slow.
 func CPUIsSlow() bool {
 	switch runtime.GOARCH {
-	case "arm", "mips", "mipsle", "mips64", "mips64le", "wasm":
+	case "arm", "mips", "mipsle", "mips64", "mips64le", "wasm", "wasm32":
 		return true
 	}
 	return false

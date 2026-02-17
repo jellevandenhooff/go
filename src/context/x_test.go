@@ -1185,7 +1185,7 @@ func TestContextErrDoneRace(t *testing.T) {
 		donec := ctx.Done()
 		go cancel()
 		for ctx.Err() == nil {
-			if runtime.GOARCH == "wasm" {
+			if runtime.GOARCH == "wasm" || runtime.GOARCH == "wasm32" {
 				runtime.Gosched() // need to explicitly yield
 			}
 		}

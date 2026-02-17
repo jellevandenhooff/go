@@ -1733,7 +1733,7 @@ func TestRootConcurrentClose(t *testing.T) {
 				first = false
 			}
 			f.Close()
-			if runtime.GOARCH == "wasm" {
+			if runtime.GOARCH == "wasm" || runtime.GOARCH == "wasm32" {
 				// TODO(go.dev/issue/71134) can lead to goroutine starvation.
 				runtime.Gosched()
 			}

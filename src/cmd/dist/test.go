@@ -1857,7 +1857,7 @@ func (t *tester) fipsSupported() bool {
 	// In the future, if some snapshots add support for these, we will have
 	// to make a decision on a per-version basis.
 	switch {
-	case goarch == "wasm",
+	case goarch == "wasm" || goarch == "wasm32",
 		goos == "windows" && goarch == "386",
 		goos == "openbsd",
 		goos == "aix":
