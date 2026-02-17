@@ -209,7 +209,7 @@ func preprocess(ctxt *obj.Link, s *obj.LSym, newprog obj.ProgAlloc) {
 		// body is just the code to translate and call the imported function.
 		framesize = 0
 	} else if s.Func().WasmExport != nil {
-		genWasmExportWrapper(s, appendp)
+		genWasmExportWrapper(ctxt, s, appendp)
 	}
 
 	if framesize > 0 && s.Func().WasmExport == nil { // genWasmExportWrapper has its own prologue generation
@@ -466,7 +466,12 @@ func preprocess(ctxt *obj.Link, s *obj.LSym, newprog obj.ProgAlloc) {
 				Sym:    s,           // PC_F
 				Offset: pcAfterCall, // PC_B
 			})
-			p = appendp(p, AI64Store, constAddr(0))
+			if ctxt.Arch.PtrSize == 4 {
+				p = appendp(p, AI32WrapI64)
+				p = appendp(p, AI32Store, constAddr(0))
+			} else {
+				p = appendp(p, AI64Store, constAddr(0))
+			}
 
 			// low-level WebAssembly call to function
 			switch call.To.Type {
@@ -883,7 +888,7 @@ func genWasmImportWrapper(s *obj.LSym, appendp func(p *obj.Prog, as obj.As, args
 }
 
 // Generate function body for wasmexport wrapper function.
-func genWasmExportWrapper(s *obj.LSym, appendp func(p *obj.Prog, as obj.As, args ...obj.Addr) *obj.Prog) {
+func genWasmExportWrapper(ctxt *obj.Link, s *obj.LSym, appendp func(p *obj.Prog, as obj.As, args ...obj.Addr) *obj.Prog) {
 	we := s.Func().WasmExport
 	we.CreateAuxSym()
 	p := s.Func().Text
@@ -956,7 +961,12 @@ func genWasmExportWrapper(s *obj.LSym, appendp func(p *obj.Prog, as obj.As, args
 		retAddr.Offset = 0
 	}
 	p = appendp(p, AI64Const, retAddr)
-	p = appendp(p, AI64Store, constAddr(0))
+	if ctxt.Arch.PtrSize == 4 {
+		p = appendp(p, AI32WrapI64)
+		p = appendp(p, AI32Store, constAddr(0))
+	} else {
+		p = appendp(p, AI64Store, constAddr(0))
+	}
 	// Set PC_B parameter to function entry
 	p = appendp(p, AI32Const, constAddr(0))
 	p = appendp(p, ACall, obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: we.WrappedSym})
@@ -1077,6 +1087,7 @@ func assemble(ctxt *obj.Link, s *obj.LSym, newprog obj.ProgAlloc) {
 	// Some functions use a special calling convention.
 	switch s.Name {
 	case "_rt0_wasm_js", "_rt0_wasm_wasip1", "_rt0_wasm_wasip1_lib",
+		"_rt0_wasm32_wasip1", "_rt0_wasm32_wasip1_lib",
 		"wasm_export_run", "wasm_export_resume", "wasm_export_getsp",
 		"wasm_pc_f_loop", "runtime.wasmDiv", "runtime.wasmTruncS", "runtime.wasmTruncU", "memeqbody":
 		varDecls = []*varDecl{}

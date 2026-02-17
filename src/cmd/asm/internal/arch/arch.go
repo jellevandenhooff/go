@@ -81,6 +81,10 @@ func Set(GOARCH string, shared bool) *Arch {
 		return archS390x()
 	case "wasm":
 		return archWasm()
+	case "wasm32":
+		a := archWasm()
+		a.LinkArch = &wasm.Linkwasm32
+		return a
 	}
 	return nil
 }
