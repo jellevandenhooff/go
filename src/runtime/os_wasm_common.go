@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build wasm || wasm32
+
 package runtime
 
 import (
@@ -30,7 +32,7 @@ func sigpanic() {
 		throw("unexpected signal during runtime execution")
 	}
 
-	// js only invokes the exception handler for memory faults.
+	// wasm only invokes the exception handler for memory faults.
 	gp.sig = _SIGSEGV
 	panicmem()
 }
@@ -131,7 +133,7 @@ func cputicks() int64 {
 	return nanotime()
 }
 
-// gsignalStack is unused on js.
+// gsignalStack is unused on wasm.
 type gsignalStack struct{}
 
 const preemptMSupported = false

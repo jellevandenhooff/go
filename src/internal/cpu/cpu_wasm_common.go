@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include "textflag.h"
+//go:build wasm || wasm32
 
-TEXT ·set_crosscall2(SB),NOSPLIT,$0-0
-	UNDEF
+package cpu
 
-TEXT crosscall2(SB), NOSPLIT, $0
-	UNDEF
+const CacheLinePadSize = 64
+
+func doinit() {
+}

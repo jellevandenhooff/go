@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build !math_big_pure_go
+//go:build (wasm || wasm32) && !math_big_pure_go
 
 #include "textflag.h"
 
@@ -23,4 +23,3 @@ TEXT ·mulAddVWW(SB),NOSPLIT,$0
 
 TEXT ·addMulVVWW(SB),NOSPLIT,$0
 	JMP ·addMulVVWW_g(SB)
-

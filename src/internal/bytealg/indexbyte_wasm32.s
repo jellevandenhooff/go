@@ -5,11 +5,11 @@
 #include "go_asm.h"
 #include "textflag.h"
 
-TEXT ·IndexByte(SB), NOSPLIT, $0-40
-	I64Load b_base+0(FP)
+TEXT ·IndexByte(SB), NOSPLIT, $0-20
+	I64Load32U b_base+0(FP)
 	I32WrapI64
-	I32Load8U c+24(FP)
-	I64Load b_len+8(FP)
+	I32Load8U c+12(FP)
+	I64Load32U b_len+4(FP)
 	I32WrapI64
 	Call memchr<>(SB)
 	I64ExtendI32U
@@ -18,21 +18,21 @@ TEXT ·IndexByte(SB), NOSPLIT, $0-40
 	Get SP
 	I64Const $-1
 	Get R0
-	I64Load b_base+0(FP)
+	I64Load32U b_base+0(FP)
 	I64Sub
 	Get R0
 	I64Eqz $0
 	Select
-	I64Store ret+32(FP)
+	I64Store32 ret+16(FP)
 
 	RET
 
-TEXT ·IndexByteString(SB), NOSPLIT, $0-32
+TEXT ·IndexByteString(SB), NOSPLIT, $0-20
 	Get SP
-	I64Load s_base+0(FP)
+	I64Load32U s_base+0(FP)
 	I32WrapI64
-	I32Load8U c+16(FP)
-	I64Load s_len+8(FP)
+	I32Load8U c+8(FP)
+	I64Load32U s_len+4(FP)
 	I32WrapI64
 	Call memchr<>(SB)
 	I64ExtendI32U
@@ -40,12 +40,12 @@ TEXT ·IndexByteString(SB), NOSPLIT, $0-32
 
 	I64Const $-1
 	Get R0
-	I64Load s_base+0(FP)
+	I64Load32U s_base+0(FP)
 	I64Sub
 	Get R0
 	I64Eqz $0
 	Select
-	I64Store ret+24(FP)
+	I64Store32 ret+16(FP)
 
 	RET
 
