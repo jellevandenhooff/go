@@ -124,6 +124,14 @@ var Linkwasm = obj.LinkArch{
 	UnaryDst:   unaryDst,
 }
 
+var Linkwasm32 = obj.LinkArch{
+	Arch:       sys.ArchWasm32,
+	Init:       instinit,
+	Preprocess: preprocess,
+	Assemble:   assemble,
+	UnaryDst:   unaryDst,
+}
+
 var (
 	morestack             *obj.LSym
 	morestackNoCtxt       *obj.LSym

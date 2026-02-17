@@ -7678,17 +7678,35 @@ func (s *state) extendIndex(idx, len *ssa.Value, kind ssa.BoundsKind, bounded bo
 		// truncate 64-bit indexes on 32-bit pointer archs. Test the
 		// high word and branch to out-of-bounds failure if it is not 0.
 		var lo *ssa.Value
-		if idx.Type.IsSigned() {
-			lo = s.newValue1(ssa.OpInt64Lo, types.Types[types.TINT], idx)
+		if s.config.RegSize > s.config.PtrSize {
+			// Arch has 64-bit registers but 32-bit pointers (e.g. wasm32).
+			// Values are not decomposed into register pairs; use truncation.
+			if idx.Type.IsSigned() {
+				lo = s.newValue1(ssa.OpTrunc64to32, types.Types[types.TINT], idx)
+			} else {
+				lo = s.newValue1(ssa.OpTrunc64to32, types.Types[types.TUINT], idx)
+			}
 		} else {
-			lo = s.newValue1(ssa.OpInt64Lo, types.Types[types.TUINT], idx)
+			if idx.Type.IsSigned() {
+				lo = s.newValue1(ssa.OpInt64Lo, types.Types[types.TINT], idx)
+			} else {
+				lo = s.newValue1(ssa.OpInt64Lo, types.Types[types.TUINT], idx)
+			}
 		}
 		if bounded || base.Flag.B != 0 {
 			return lo
 		}
 		bNext := s.f.NewBlock(ssa.BlockPlain)
 		bPanic := s.f.NewBlock(ssa.BlockExit)
-		hi := s.newValue1(ssa.OpInt64Hi, types.Types[types.TUINT32], idx)
+		var hi *ssa.Value
+		if s.config.RegSize > s.config.PtrSize {
+			// Get high 32 bits via shift, then truncate to 32-bit.
+			hi = s.newValue1(ssa.OpTrunc64to32, types.Types[types.TUINT32],
+				s.newValue2(ssa.OpRsh64Ux64, idx.Type, idx,
+					s.constInt64(types.Types[types.TUINT64], 32)))
+		} else {
+			hi = s.newValue1(ssa.OpInt64Hi, types.Types[types.TUINT32], idx)
+		}
 		cmp := s.newValue2(ssa.OpEq32, types.Types[types.TBOOL], hi, s.constInt32(types.Types[types.TUINT32], 0))
 		if !idx.Type.IsSigned() {
 			switch kind {
@@ -7718,8 +7736,13 @@ func (s *state) extendIndex(idx, len *ssa.Value, kind ssa.BoundsKind, bounded bo
 		b.AddEdgeTo(bPanic)
 
 		s.startBlock(bPanic)
-		mem := s.newValue4I(ssa.OpPanicExtend, types.TypeMem, int64(kind), hi, lo, len, s.mem())
-		s.endBlock().SetControl(mem)
+		if Arch.LinkArch.Family == sys.Wasm {
+			// Wasm can't lower PanicExtend; use rtcall like boundsCheck does.
+			s.rtcall(BoundsCheckFunc[kind], false, nil, lo, len)
+		} else {
+			mem := s.newValue4I(ssa.OpPanicExtend, types.TypeMem, int64(kind), hi, lo, len, s.mem())
+			s.endBlock().SetControl(mem)
+		}
 		s.startBlock(bNext)
 
 		return lo
