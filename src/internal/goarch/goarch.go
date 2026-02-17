@@ -63,3 +63,12 @@ const MinFrameSize = _MinFrameSize
 // StackAlign is the required alignment of the SP register.
 // The stack must be at least word aligned, but some architectures require more.
 const StackAlign = _StackAlign
+
+// RegSize is the size of a general-purpose register in bytes.
+// On most architectures this equals PtrSize, but on wasm32 it
+// is 8 because WebAssembly always uses 64-bit registers.
+const RegSize = PtrSize + 4*IsWasm32
+
+// IsWasmFamily is 1 if the architecture belongs to the WebAssembly family
+// (wasm or wasm32), and 0 otherwise.
+const IsWasmFamily = IsWasm + IsWasm32
