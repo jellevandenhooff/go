@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build wasm || wasm32
+
 package runtime
 
 import (
-	"internal/goarch"
 	"internal/runtime/sys"
 	"unsafe"
 )
@@ -28,8 +29,8 @@ func wasmExit(code int32)
 // and then stopped before the first instruction in fn.
 func gostartcall(buf *gobuf, fn, ctxt unsafe.Pointer) {
 	sp := buf.sp
-	sp -= goarch.PtrSize
-	*(*uintptr)(unsafe.Pointer(sp)) = buf.pc
+	sp -= 8 // wasm return address slot is always 8 bytes for alignment
+	*(*uint64)(unsafe.Pointer(sp)) = uint64(buf.pc)
 	buf.sp = sp
 	buf.pc = uintptr(fn)
 	buf.ctxt = ctxt
