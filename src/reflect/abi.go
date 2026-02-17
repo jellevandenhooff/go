@@ -435,7 +435,7 @@ func newAbiDesc(t *funcType, rcvr *abi.Type) abiDesc {
 	// From the input parameters alone, we now know
 	// the stackCallArgsSize and retOffset.
 	stackCallArgsSize := in.stackBytes
-	retOffset := align(in.stackBytes, goarch.PtrSize)
+	retOffset := align(in.stackBytes, goarch.RegSize)
 
 	// Compute the stack frame pointer bitmap and register
 	// pointer bitmap for return values.

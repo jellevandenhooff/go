@@ -7047,6 +7047,12 @@ func TestFuncLayout(t *testing.T) {
 	align := func(x uintptr) uintptr {
 		return (x + goarch.PtrSize - 1) &^ (goarch.PtrSize - 1)
 	}
+	// retAlign rounds up to the return value offset alignment.
+	// This matches the compiler's use of RegSize for the boundary
+	// between args and results (see types/size.go).
+	retAlign := func(x uintptr) uintptr {
+		return (x + goarch.RegSize - 1) &^ (goarch.RegSize - 1)
+	}
 	var r []byte
 	if goarch.PtrSize == 4 {
 		r = []byte{0, 0, 0, 1}
@@ -7077,9 +7083,9 @@ func TestFuncLayout(t *testing.T) {
 		},
 		{
 			typ:       ValueOf(func(a, b, c uint32, p *byte, d uint16) {}).Type(),
-			size:      align(align(3*4) + goarch.PtrSize + 2),
+			size:      retAlign(align(3*4) + goarch.PtrSize + 2),
 			argsize:   align(3*4) + goarch.PtrSize + 2,
-			retOffset: align(align(3*4) + goarch.PtrSize + 2),
+			retOffset: retAlign(align(3*4) + goarch.PtrSize + 2),
 			stack:     r,
 			gc:        r,
 		},
@@ -7102,17 +7108,17 @@ func TestFuncLayout(t *testing.T) {
 		{
 			rcvr:      ValueOf((*byte)(nil)).Type(),
 			typ:       ValueOf(func(a uintptr, b *int) {}).Type(),
-			size:      3 * goarch.PtrSize,
+			size:      retAlign(3 * goarch.PtrSize),
 			argsize:   3 * goarch.PtrSize,
-			retOffset: 3 * goarch.PtrSize,
+			retOffset: retAlign(3 * goarch.PtrSize),
 			stack:     []byte{1, 0, 1},
 			gc:        []byte{1, 0, 1},
 		},
 		{
 			typ:       ValueOf(func(a uintptr) {}).Type(),
-			size:      goarch.PtrSize,
+			size:      retAlign(goarch.PtrSize),
 			argsize:   goarch.PtrSize,
-			retOffset: goarch.PtrSize,
+			retOffset: retAlign(goarch.PtrSize),
 			stack:     []byte{},
 			gc:        []byte{},
 		},
