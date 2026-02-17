@@ -1,6 +1,6 @@
 // errorcheck -0 -d=nil
 
-//go:build !wasm && !aix
+//go:build !wasm && !wasm32 && !aix
 
 // Copyright 2013 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style

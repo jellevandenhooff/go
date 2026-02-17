@@ -1956,7 +1956,7 @@ func TestRootName(t *testing.T) {
 // TestRootNoLstat verifies that we do not use lstat (possibly escaping the root)
 // when reading directories in a Root.
 func TestRootNoLstat(t *testing.T) {
-	if runtime.GOARCH == "wasm" {
+	if runtime.GOARCH == "wasm" || runtime.GOARCH == "wasm32" {
 		t.Skip("wasm lacks fstatat")
 	}
 

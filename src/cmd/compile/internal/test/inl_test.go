@@ -271,7 +271,7 @@ func TestIntendedInlining(t *testing.T) {
 	}
 
 	switch runtime.GOARCH {
-	case "386", "wasm", "arm":
+	case "386", "wasm", "wasm32", "arm":
 	default:
 		// TODO(mvdan): As explained in /test/inline_sync.go, some
 		// architectures don't have atomic intrinsics, so these go over
@@ -286,7 +286,7 @@ func TestIntendedInlining(t *testing.T) {
 		}
 	}
 
-	if runtime.GOARCH != "wasm" {
+	if runtime.GOARCH != "wasm" && runtime.GOARCH != "wasm32" {
 		// mutex implementation for multi-threaded GOARCHes
 		want["runtime"] = append(want["runtime"],
 			// in the fast paths of lock2 and unlock2
