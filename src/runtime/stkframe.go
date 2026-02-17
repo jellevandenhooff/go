@@ -107,9 +107,13 @@ func (frame *stkframe) argMapInternal() (argMap bitvector, hasReflectStackObj bo
 
 		minSP := frame.fp
 		if !usesLR {
-			// The CALL itself pushes a word.
+			// The CALL itself pushes a return address slot.
 			// Undo that adjustment.
-			minSP -= goarch.PtrSize
+			if goarch.IsWasm32 == 1 {
+				minSP -= goarch.RegSize
+			} else {
+				minSP -= goarch.PtrSize
+			}
 		}
 		if arg0 >= minSP {
 			// The function hasn't started yet.

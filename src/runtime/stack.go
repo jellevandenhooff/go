@@ -1105,8 +1105,12 @@ func newstack() {
 	}
 	sp := gp.sched.sp
 	if goarch.ArchFamily == goarch.AMD64 || goarch.ArchFamily == goarch.I386 || goarch.ArchFamily == goarch.WASM {
-		// The call to morestack cost a word.
-		sp -= goarch.PtrSize
+		// The call to morestack cost a return address slot.
+		if goarch.IsWasm32 == 1 {
+			sp -= goarch.RegSize // return address slot is 8 bytes on wasm32 for stack alignment
+		} else {
+			sp -= goarch.PtrSize
+		}
 	}
 	if stackDebug >= 1 || sp < gp.stack.lo {
 		print("runtime: newstack sp=", hex(sp), " stack=[", hex(gp.stack.lo), ", ", hex(gp.stack.hi), "]\n",

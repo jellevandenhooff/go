@@ -326,8 +326,12 @@ func (u *unwinder) resolveInternal(innermost, isSyscall bool) {
 		}
 		frame.fp = frame.sp + uintptr(funcspdelta(f, frame.pc))
 		if !usesLR {
-			// On x86, call instruction pushes return PC before entering new function.
-			frame.fp += goarch.PtrSize
+			// On non-LR architectures (x86, wasm), the call instruction pushes the return PC before entering new function.
+			if goarch.IsWasm32 == 1 {
+				frame.fp += goarch.RegSize // return address slot is 8 bytes on wasm32 for stack alignment
+			} else {
+				frame.fp += goarch.PtrSize
+			}
 		}
 	}
 
@@ -375,7 +379,11 @@ func (u *unwinder) resolveInternal(innermost, isSyscall bool) {
 			}
 		} else {
 			if frame.lr == 0 {
-				lrPtr = frame.fp - goarch.PtrSize
+				if goarch.IsWasm32 == 1 {
+					lrPtr = frame.fp - goarch.RegSize
+				} else {
+					lrPtr = frame.fp - goarch.PtrSize
+				}
 				frame.lr = *(*uintptr)(unsafe.Pointer(lrPtr))
 			}
 		}
@@ -383,8 +391,12 @@ func (u *unwinder) resolveInternal(innermost, isSyscall bool) {
 
 	frame.varp = frame.fp
 	if !usesLR {
-		// On x86, call instruction pushes return PC before entering new function.
-		frame.varp -= goarch.PtrSize
+		// On non-LR architectures (x86, wasm), the call instruction pushes the return PC before entering new function.
+		if goarch.IsWasm32 == 1 {
+			frame.varp -= goarch.RegSize
+		} else {
+			frame.varp -= goarch.PtrSize
+		}
 	}
 
 	// For architectures with frame pointers, if there's
