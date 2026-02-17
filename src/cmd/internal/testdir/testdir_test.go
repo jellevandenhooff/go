@@ -280,7 +280,7 @@ func (t test) expectFail() bool {
 	// Note: gccgo supports more 32-bit architectures than this, but
 	// hopefully the 32-bit failures are fixed before this matters.
 	switch goarch {
-	case "386", "arm", "mips", "mipsle":
+	case "386", "arm", "mips", "mipsle", "wasm32":
 		failureSets = append(failureSets, types2Failures32Bit)
 	}
 
@@ -1898,9 +1898,11 @@ var types2Failures = setOf(
 )
 
 var types2Failures32Bit = setOf(
-	"printbig.go",             // large untyped int passed to print (32-bit)
-	"fixedbugs/bug114.go",     // large untyped int passed to println (32-bit)
-	"fixedbugs/issue23305.go", // large untyped int passed to println (32-bit)
+	"printbig.go",              // large untyped int passed to print (32-bit)
+	"fixedbugs/bug114.go",      // large untyped int passed to println (32-bit)
+	"fixedbugs/issue23305.go",  // large untyped int passed to println (32-bit)
+	"fixedbugs/issue30116.go",  // bounds check error messages truncated on 32-bit
+	"fixedbugs/issue30116u.go", // bounds check error messages truncated on 32-bit
 )
 
 // In all of these cases, the 1.17 compiler reports reasonable errors, but either the
