@@ -106,7 +106,7 @@ func testReader(t *testing.T, tr io.Reader, v *testtrace.Validator, exp *testtra
 			break
 		}
 		v.GoVersion = r.GoVersion()
-		if runtime.GOOS == "windows" || runtime.GOARCH == "wasm" {
+		if runtime.GOOS == "windows" || runtime.GOARCH == "wasm" || runtime.GOARCH == "wasm32" {
 			v.SkipClockSnapshotChecks()
 		}
 		if err != nil {

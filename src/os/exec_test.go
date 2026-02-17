@@ -18,7 +18,7 @@ func TestProcessLiteral(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Process literals do not work on Windows. FindProcess/etc must initialize the process handle")
 	}
-	if runtime.GOARCH == "wasm" {
+	if runtime.GOARCH == "wasm" || runtime.GOARCH == "wasm32" {
 		t.Skip("Signals send + notify not fully supported om wasm port")
 	}
 

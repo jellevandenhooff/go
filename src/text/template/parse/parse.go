@@ -49,7 +49,7 @@ var maxStackDepth = 10000
 
 // init reduces maxStackDepth for WebAssembly due to its smaller stack size.
 func init() {
-	if runtime.GOARCH == "wasm" {
+	if runtime.GOARCH == "wasm" || runtime.GOARCH == "wasm32" {
 		maxStackDepth = 1000
 	}
 }

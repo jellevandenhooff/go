@@ -22,7 +22,7 @@ import (
 var maxExecDepth = initMaxExecDepth()
 
 func initMaxExecDepth() int {
-	if runtime.GOARCH == "wasm" {
+	if runtime.GOARCH == "wasm" || runtime.GOARCH == "wasm32" {
 		return 1000
 	}
 	return 100000
