@@ -1782,7 +1782,8 @@ func buildModeSupported(compiler, buildmode, goos, goarch string) bool {
 			"freebsd/amd64",
 			"darwin/amd64", "darwin/arm64",
 			"windows/amd64", "windows/386", "windows/arm64",
-			"wasip1/wasm":
+			"wasip1/wasm", "wasip1/wasm32",
+			"wasip3/wasm32":
 			return true
 		}
 		return false
@@ -1864,7 +1865,7 @@ func (t *tester) fipsSupported() bool {
 	// In the future, if some snapshots add support for these, we will have
 	// to make a decision on a per-version basis.
 	switch {
-	case goarch == "wasm",
+	case goarch == "wasm" || goarch == "wasm32",
 		goos == "windows" && goarch == "386",
 		goos == "openbsd",
 		goos == "aix":
