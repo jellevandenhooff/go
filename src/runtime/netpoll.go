@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build unix || (js && wasm) || wasip1 || windows
+//go:build unix || (js && wasm) || wasip1 || wasip3 || windows
 
 package runtime
 
@@ -344,7 +344,7 @@ func poll_runtime_pollWait(pd *pollDesc, mode int) int {
 	if errcode != pollNoError {
 		return errcode
 	}
-	// As for now only Solaris, illumos, AIX and wasip1 use level-triggered IO.
+	// As for now only Solaris, illumos, AIX, and wasip1 use level-triggered IO.
 	if GOOS == "solaris" || GOOS == "illumos" || GOOS == "aix" || GOOS == "wasip1" {
 		netpollarm(pd, mode)
 	}

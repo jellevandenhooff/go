@@ -66,6 +66,11 @@ TEXT runtime·gogo(SB), NOSPLIT, $0-4
 // Switch to m->g0's stack, call fn(g).
 // Fn must never return. It should gogo(&g->sched)
 // to keep running g.
+//
+// On wasm, instead of calling fn directly, mcall sets up the g0 stack
+// so that wasm_pc_f_loop dispatches fn. This means fn and everything it
+// calls (schedule, findRunnable, netpoll, …) are Go-compiled functions
+// with PC_B resume support, so pause/pausePC works from anywhere on g0.
 TEXT runtime·mcall(SB), NOSPLIT, $0-4
 	// CTXT = fn
 	MOVW fn+0(FP), CTXT
@@ -86,31 +91,51 @@ TEXT runtime·mcall(SB), NOSPLIT, $0-4
 		JMP runtime·badmcall(SB)
 	End
 
-	// switch to g0's stack
+	// Set up g0 stack for wasm_pc_f_loop to dispatch fn(gp).
+	//
+	// Stack layout (relative to g0.sched.sp):
+	//   sp-8:  gp argument (8 bytes, the current g)
+	//   sp-16: (return addr slot, 8 bytes) = fn's entry SP
+	//   sp-24: fn's encoded PC for wasm_pc_f_loop (4 bytes in 8-byte slot)
+	//
+	// wasm_pc_f_loop reads the encoded PC from SP-8 and calls fn.
+	// fn's prologue does SP -= frameSize.
+	// fn reads gp at SP + frameSize + 8 = entry_SP + 8 = g0.sched.sp - 8.
+
+	// R3 = g0.sched.sp - 16 (fn's entry SP)
 	I64Load32U (g_sched+gobuf_sp)(R2)
-	I64Const $8
+	I64Const $16
 	I64Sub
+	Set R3
+
+	// Store gp (current g) at R3+8 = g0.sched.sp - 8
+	MOVD g, 8(R3)
+
+	// SP = fn's entry SP
+	Get R3
 	I32WrapI64
 	Set SP
-
-	// set arg to current g
-	MOVD g, 0(SP)
 
 	// switch to g0
 	MOVD R2, g
 
-	// call fn
-	Get CTXT
-	I32WrapI64
-	I64Load32U $0
-	CALL
-
+	// Store fn's encoded PC at SP-8 for wasm_pc_f_loop to dispatch.
+	// funcval.fn contains PC_F<<16 | PC_B (PC_B=0 for entry).
 	Get SP
 	I32Const $8
-	I32Add
-	Set SP
+	I32Sub
+	Get CTXT
+	I32WrapI64
+	I32Load $0
+	I32Store $0
 
-	JMP runtime·badmcall2(SB)
+	// Unwind to wasm_pc_f_loop, which will dispatch fn.
+	// Note: unlike other architectures there is no badmcall2 guard here.
+	// Because fn is dispatched via wasm_pc_f_loop rather than a direct CALL,
+	// there is no return path through mcall. If fn incorrectly returns,
+	// wasm_pc_f_loop will read a stale PC from the stack and crash.
+	I32Const $1
+	Return
 
 // func systemstack(fn func())
 TEXT runtime·systemstack(SB), NOSPLIT, $0-4
@@ -609,6 +634,17 @@ TEXT wasm_export_lib(SB),NOSPLIT,$0
 
 TEXT runtime·pause(SB), NOSPLIT, $0-4
 	MOVW newsp+0(FP), SP
+	I32Const $1
+	Set PAUSE
+	RETUNWIND
+
+// pausePC pauses execution like pause, but uses the assembler's
+// automatic return address handling instead of manually setting SP.
+// This works correctly from any call depth (including g0's schedule chain).
+// The assembler's RETUNWIND epilogue does SP += 0 + 8, which pops
+// pausePC's return address slot, leaving SP at the caller's post-prologue
+// value with the caller's resume PC at SP-8.
+TEXT runtime·pausePC(SB), NOSPLIT, $0
 	I32Const $1
 	Set PAUSE
 	RETUNWIND
