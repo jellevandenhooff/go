@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# Copyright 2026 The Go Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
+# Executor script for wasip3/wasm32 binaries.
+# Called by `go test` and `go run` when GOOS=wasip3 GOARCH=wasm32.
+#
+# Takes a .wasm core module, wraps it as a WASI 0.3 component,
+# and runs it with wasmtime's P3 async support.
+
+set -eo pipefail
+
+WASM="$1"
+
+if [ -z "$WASM" ]; then
+    echo "Usage: go_wasip3_wasm32_exec <file.wasm> [args...]" >&2
+    exit 1
+fi
+
+shift
+
+# Locate WIT definitions relative to GOROOT.
+GOROOT="${GOROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
+WIT_DIR="$GOROOT/src/internal/wasi/wit"
+
+if [ ! -d "$WIT_DIR" ]; then
+    echo "go_wasip3_wasm32_exec: WIT directory not found: $WIT_DIR" >&2
+    exit 1
+fi
+
+# Create temp directory for intermediate files.
+TMPOUT="$(mktemp -d)"
+trap 'rm -rf "$TMPOUT"' EXIT
+
+EMBEDDED="$TMPOUT/embedded.wasm"
+COMPONENT="$TMPOUT/component.wasm"
+
+# Embed component type info and create component.
+# wasm-tools stderr is useful for diagnosing component creation failures.
+wasm-tools component embed "$WIT_DIR" --world command "$WASM" -o "$EMBEDDED"
+wasm-tools component new "$EMBEDDED" -o "$COMPONENT"
+
+# Run with wasmtime using P3 async support.
+# Grant full filesystem access, networking, and environment inheritance
+# so that Go test binaries can function properly.
+#
+# We need a wasmtime build from main (post-v42.0.1) that includes:
+#   - PR #12550: borrow state tracking fix for async tasks (e.g. closing
+#     a UDP socket while a receive is pending)
+#   - PR #12570: subtask reparenting removal
+#   - PR #12640: host subtask cancellation fix
+# These are expected to ship in wasmtime v43.0.0. Until then, a
+# build from main may be needed.
+#
+# Tracing: set WASMTIME_LOG to enable wasmtime trace logging, e.g.:
+#   WASMTIME_LOG=wasmtime_runtime::component::concurrent=trace
+# This is useful for debugging async subtask lifecycle issues.
+# The trace output goes to stderr of the wasmtime process.
+case "${GOWASIRUNTIME:-wasmtime}" in
+    "wasmtime")
+        ;;
+    *)
+        echo "go_wasip3_wasm32_exec: unsupported GOWASIRUNTIME=$GOWASIRUNTIME (only wasmtime supports WASI P3)" >&2
+        exit 1
+        ;;
+esac
+
+if [ -n "$WASMTIME" ]; then
+    if [ ! -x "$WASMTIME" ]; then
+        echo "go_wasip3_wasm32_exec: WASMTIME not found or not executable: $WASMTIME" >&2
+        exit 1
+    fi
+else
+    WASMTIME="wasmtime"
+fi
+exec "$WASMTIME" run \
+    -S p3 \
+    -W component-model-async \
+    -W component-model-async-builtins \
+    -W max-wasm-stack=8388608 \
+    -S tcp \
+    -S udp \
+    -S inherit-network \
+    -S inherit-env \
+    --dir=/ \
+    ${GOWASIRUNTIMEARGS:-} \
+    "$COMPONENT" \
+    "$@"
