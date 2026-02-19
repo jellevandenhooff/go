@@ -146,7 +146,7 @@ func MustHaveGoRun(t testing.TB) {
 // There is a copy of this function in cmd/dist/test.go.
 func HasParallelism() bool {
 	switch runtime.GOOS {
-	case "js", "wasip1":
+	case "js", "wasip1", "wasip3":
 		return false
 	}
 	return true
@@ -439,7 +439,7 @@ func SkipFlakyNet(t testing.TB) {
 // CPUIsSlow reports whether the CPU running the test is suspected to be slow.
 func CPUIsSlow() bool {
 	switch runtime.GOARCH {
-	case "arm", "mips", "mipsle", "mips64", "mips64le", "wasm":
+	case "arm", "mips", "mipsle", "mips64", "mips64le", "wasm", "wasm32":
 		return true
 	}
 	return false

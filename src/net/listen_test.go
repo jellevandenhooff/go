@@ -229,6 +229,9 @@ func TestDualStackTCPListener(t *testing.T) {
 	if !supportsIPv4() || !supportsIPv6() {
 		t.Skip("both IPv4 and IPv6 are required")
 	}
+	if !supportsIPv4map() {
+		t.Skip("dual-stack requires IPv4-mapped IPv6 support")
+	}
 
 	for _, tt := range dualStackTCPListenerTests {
 		if !testableListenArgs(tt.network1, JoinHostPort(tt.address1, "0"), "") {
@@ -318,6 +321,9 @@ func TestDualStackUDPListener(t *testing.T) {
 	}
 	if !supportsIPv4() || !supportsIPv6() {
 		t.Skip("both IPv4 and IPv6 are required")
+	}
+	if !supportsIPv4map() {
+		t.Skip("dual-stack requires IPv4-mapped IPv6 support")
 	}
 
 	for _, tt := range dualStackUDPListenerTests {
@@ -728,6 +734,8 @@ func TestListenConfigControl(t *testing.T) {
 	switch runtime.GOOS {
 	case "plan9":
 		t.Skipf("not supported on %s", runtime.GOOS)
+	case "js", "wasip3":
+		t.Skipf("skipping: ListenConfig.Control not supported on %s", runtime.GOOS)
 	}
 
 	t.Run("StreamListen", func(t *testing.T) {

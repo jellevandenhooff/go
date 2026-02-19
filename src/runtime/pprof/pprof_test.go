@@ -431,8 +431,8 @@ func testCPUProfile(t *testing.T, matches profileMatchFunc, f func(dur time.Dura
 		t.Logf("uname -a: %v", vers)
 	case "plan9":
 		t.Skip("skipping on plan9")
-	case "wasip1":
-		t.Skip("skipping on wasip1")
+	case "wasip1", "wasip3":
+		t.Skip("skipping on " + runtime.GOOS)
 	}
 
 	broken := testenv.CPUProfilingBroken()

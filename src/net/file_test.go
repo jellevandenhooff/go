@@ -29,7 +29,7 @@ var fileConnTests = []struct {
 
 func TestFileConn(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9", "js", "wasip1":
+	case "plan9", "js", "wasip1", "wasip3":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
 
@@ -131,7 +131,7 @@ var fileListenerTests = []struct {
 
 func TestFileListener(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9", "js", "wasip1":
+	case "plan9", "js", "wasip1", "wasip3":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
 
@@ -224,7 +224,7 @@ var filePacketConnTests = []struct {
 
 func TestFilePacketConn(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9", "js", "wasip1":
+	case "plan9", "js", "wasip1", "wasip3":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
 

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build unix || (js && wasm) || wasip1
+//go:build unix || (js && wasm) || wasip1 || wasip3
 
 package os_test
 
@@ -40,7 +40,7 @@ func checkUidGid(t *testing.T, path string, uid, gid int) {
 }
 
 func TestChown(t *testing.T) {
-	if runtime.GOOS == "wasip1" {
+	if runtime.GOOS == "wasip1" || runtime.GOOS == "wasip3" {
 		t.Skip("file ownership not supported on " + runtime.GOOS)
 	}
 	t.Parallel()
@@ -88,7 +88,7 @@ func TestChown(t *testing.T) {
 }
 
 func TestFileChown(t *testing.T) {
-	if runtime.GOOS == "wasip1" {
+	if runtime.GOOS == "wasip1" || runtime.GOOS == "wasip3" {
 		t.Skip("file ownership not supported on " + runtime.GOOS)
 	}
 	t.Parallel()
@@ -230,7 +230,7 @@ func TestReaddirRemoveRace(t *testing.T) {
 
 // Issue 23120: respect umask when doing Mkdir with the sticky bit
 func TestMkdirStickyUmask(t *testing.T) {
-	if runtime.GOOS == "wasip1" {
+	if runtime.GOOS == "wasip1" || runtime.GOOS == "wasip3" {
 		t.Skip("file permissions not supported on " + runtime.GOOS)
 	}
 	// Issue #69788: This test temporarily changes the umask for testing purposes,
@@ -274,7 +274,7 @@ func TestMkdirStickyUmask(t *testing.T) {
 
 // See also issues: 22939, 24331
 func newFileTest(t *testing.T, blocking bool) {
-	if runtime.GOOS == "js" || runtime.GOOS == "wasip1" {
+	if runtime.GOOS == "js" || runtime.GOOS == "wasip1" || runtime.GOOS == "wasip3" {
 		t.Skipf("syscall.Pipe is not available on %s.", runtime.GOOS)
 	}
 

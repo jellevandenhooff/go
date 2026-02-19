@@ -4,7 +4,7 @@
 
 // Test broken pipes on Unix systems.
 //
-//go:build !plan9 && !js && !wasip1
+//go:build !plan9 && !js && !wasip1 && !wasip3
 
 package os_test
 

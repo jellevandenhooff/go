@@ -522,6 +522,9 @@ func TestDialerLocalAddr(t *testing.T) {
 	if !supportsIPv4() || !supportsIPv6() {
 		t.Skip("both IPv4 and IPv6 are required")
 	}
+	if !supportsIPv4map() {
+		t.Skip("IPv4-mapped IPv6 addresses are required")
+	}
 
 	type test struct {
 		network, raddr string
@@ -740,6 +743,10 @@ func TestDialerKeepAlive(t *testing.T) {
 }
 
 func TestDialCancel(t *testing.T) {
+	switch runtime.GOOS {
+	case "js", "wasip1":
+		t.Skipf("skipping: cancel not supported on %s", runtime.GOOS)
+	}
 	mustHaveExternalNetwork(t)
 
 	blackholeIPPort := JoinHostPort(slowDst4, "1234")
@@ -991,6 +998,8 @@ func TestDialerControl(t *testing.T) {
 		t.Skipf("not supported on %s", runtime.GOOS)
 	case "js", "wasip1":
 		t.Skipf("skipping: fake net does not support Dialer.Control")
+	case "wasip3":
+		t.Skipf("skipping: WASI sockets do not support Dialer.Control")
 	}
 
 	t.Run("StreamDial", func(t *testing.T) {
@@ -1036,6 +1045,8 @@ func TestDialerControlContext(t *testing.T) {
 		t.Skipf("%s does not have full support of socktest", runtime.GOOS)
 	case "js", "wasip1":
 		t.Skipf("skipping: fake net does not support Dialer.ControlContext")
+	case "wasip3":
+		t.Skipf("skipping: WASI sockets do not support Dialer.ControlContext")
 	}
 	t.Run("StreamDial", func(t *testing.T) {
 		for i, network := range []string{"tcp", "tcp4", "tcp6", "unix", "unixpacket"} {
@@ -1070,6 +1081,8 @@ func TestDialContext(t *testing.T) {
 		t.Skipf("not supported on %s", runtime.GOOS)
 	case "js", "wasip1":
 		t.Skipf("skipping: fake net does not support Dialer.ControlContext")
+	case "wasip3":
+		t.Skipf("skipping: WASI sockets do not support Dialer.ControlContext")
 	}
 
 	t.Run("StreamDial", func(t *testing.T) {

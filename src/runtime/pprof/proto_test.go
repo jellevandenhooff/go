@@ -139,7 +139,7 @@ func testPCs(t *testing.T) (addr1, addr2 uint64, map1, map2 *profile.Mapping) {
 			BuildID:      buildID,
 			HasFunctions: true,
 		}
-	case "js", "wasip1":
+	case "js", "wasip1", "wasip3":
 		addr1 = uint64(abi.FuncPCABIInternal(f1))
 		addr2 = uint64(abi.FuncPCABIInternal(f2))
 		// Wasm binaries don't have traditional mappings.
@@ -159,8 +159,8 @@ func testPCs(t *testing.T) (addr1, addr2 uint64, map1, map2 *profile.Mapping) {
 }
 
 func TestConvertCPUProfile(t *testing.T) {
-	if runtime.GOOS == "wasip1" {
-		t.Skip("wasip1 does not have mappings; symbolization sets HasFunctions on the fake mapping")
+	if runtime.GOOS == "wasip1" || runtime.GOOS == "wasip3" {
+		t.Skip("wasm does not have mappings; symbolization sets HasFunctions on the fake mapping")
 	}
 	addr1, addr2, map1, map2 := testPCs(t)
 

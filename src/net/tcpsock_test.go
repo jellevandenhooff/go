@@ -674,7 +674,7 @@ func TestTCPBig(t *testing.T) {
 
 func TestCopyPipeIntoTCP(t *testing.T) {
 	switch runtime.GOOS {
-	case "js", "wasip1":
+	case "js", "wasip1", "wasip3":
 		t.Skipf("skipping: os.Pipe not supported on %s", runtime.GOOS)
 	}
 

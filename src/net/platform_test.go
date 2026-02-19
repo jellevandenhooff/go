@@ -38,7 +38,14 @@ func testableNetwork(network string) bool {
 		return supportsUnixSocket()
 	case "unixpacket":
 		switch runtime.GOOS {
-		case "aix", "android", "darwin", "ios", "plan9", "windows":
+		case "aix", "android", "darwin", "ios", "plan9", "windows", "wasip3":
+			return false
+		}
+	}
+	switch net {
+	case "udp", "udp4", "udp6":
+		switch runtime.GOOS {
+		case "wasip1":
 			return false
 		}
 	}
@@ -138,6 +145,13 @@ func testableListenArgs(network, address, client string) bool {
 		if (ip.To4() != nil || ip == nil) && cip.To16() != nil && cip.To4() == nil { // a pair of IPv4 server and IPv6 client
 			return false
 		}
+		// Without dual-stack, a wildcard IPv6 address on a
+		// non-specific network (e.g. "tcp" not "tcp6") will
+		// resolve to IPv4 via favoriteAddrFamily, so an IPv6
+		// client cannot connect.
+		if ip.To16() != nil && ip.To4() == nil && cip.To16() != nil && cip.To4() == nil {
+			return false
+		}
 	}
 
 	return true
@@ -148,7 +162,7 @@ func condFatalf(t *testing.T, network string, format string, args ...any) {
 	// A few APIs like File and Read/WriteMsg{UDP,IP} are not
 	// fully implemented yet on Plan 9 and Windows.
 	switch runtime.GOOS {
-	case "windows", "js", "wasip1":
+	case "windows", "js", "wasip1", "wasip3":
 		if network == "file+net" {
 			t.Logf(format, args...)
 			return

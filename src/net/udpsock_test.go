@@ -489,7 +489,7 @@ func TestUDPReadTimeout(t *testing.T) {
 
 func TestAllocs(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9", "js", "wasip1":
+	case "plan9", "js", "wasip1", "wasip3":
 		// These implementations have not been optimized.
 		t.Skipf("skipping on %v", runtime.GOOS)
 	case "windows":
@@ -685,6 +685,9 @@ func TestIPv6WriteMsgUDPAddrPortTargetAddrIPVersion(t *testing.T) {
 		// OpenBSD's IPv6 sockets are always IPv6-only, according to the man page:
 		// https://man.openbsd.org/ip6#IPV6_V6ONLY
 		t.Skipf("skipping on %v", runtime.GOOS)
+	}
+	if !supportsIPv4map() {
+		t.Skip("IPv4-mapped IPv6 addresses are required")
 	}
 
 	conn, err := ListenUDP("udp", nil)

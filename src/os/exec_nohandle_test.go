@@ -14,6 +14,7 @@ import (
 )
 
 func TestProcessWithHandleUnsupported(t *testing.T) {
+	testenv.MustHaveExec(t)
 	const envVar = "OSTEST_PROCESS_WITH_HANDLE"
 	if Getenv(envVar) != "" {
 		time.Sleep(1 * time.Minute)

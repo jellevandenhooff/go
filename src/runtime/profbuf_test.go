@@ -220,7 +220,7 @@ func TestProfBufWakeup(t *testing.T) {
 	switch runtime.GOOS {
 	case "js":
 		waitStatus = "waiting"
-	case "wasip1":
+	case "wasip1", "wasip3":
 		waitStatus = "runnable"
 	default:
 		waitStatus = "syscall"

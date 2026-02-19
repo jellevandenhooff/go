@@ -6927,10 +6927,10 @@ func TestTypeFieldOutOfRangePanic(t *testing.T) {
 }
 
 func TestTypeFieldReadOnly(t *testing.T) {
-	if runtime.GOOS == "js" || runtime.GOOS == "wasip1" {
+	if runtime.GOOS == "js" || runtime.GOOS == "wasip1" || runtime.GOOS == "wasip3" {
 		// This is OK because we don't use the optimization
-		// for js or wasip1.
-		t.Skip("test does not fault on GOOS=js")
+		// for js, wasip1, or wasip3.
+		t.Skip("test does not fault on GOOS=" + runtime.GOOS)
 	}
 
 	// It's important that changing one StructField.Index

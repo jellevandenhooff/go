@@ -80,7 +80,7 @@ func TestRemoveAll(t *testing.T) {
 	}
 
 	// Chmod is not supported under Windows or wasip1 and test fails as root.
-	if runtime.GOOS != "windows" && runtime.GOOS != "wasip1" && Getuid() != 0 {
+	if runtime.GOOS != "windows" && runtime.GOOS != "wasip1" && runtime.GOOS != "wasip3" && Getuid() != 0 {
 		// Make directory with file and subdirectory and trigger error.
 		if err = MkdirAll(dpath, 0777); err != nil {
 			t.Fatalf("MkdirAll %q: %s", dpath, err)
@@ -239,7 +239,7 @@ func TestRemoveReadOnlyDir(t *testing.T) {
 // Issue #29983.
 func TestRemoveAllButReadOnlyAndPathError(t *testing.T) {
 	switch runtime.GOOS {
-	case "js", "wasip1", "windows":
+	case "js", "wasip1", "wasip3", "windows":
 		t.Skipf("skipping test on %s", runtime.GOOS)
 	}
 
@@ -387,7 +387,7 @@ func TestRemoveAllWithMoreErrorThanReqSize(t *testing.T) {
 		return
 	}
 	if err == nil {
-		if runtime.GOOS == "windows" || runtime.GOOS == "wasip1" {
+		if runtime.GOOS == "windows" || runtime.GOOS == "wasip1" || runtime.GOOS == "wasip3" {
 			// Marking a directory as read-only in Windows does not prevent the RemoveAll
 			// from creating or removing files within it.
 			//

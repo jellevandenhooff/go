@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build unix || js || wasip1
+//go:build unix || js || wasip1 || wasip3
 
 package net
 
@@ -31,7 +31,7 @@ func init() {
 
 func supportsUnixSocket() bool {
 	switch runtime.GOOS {
-	case "android", "ios":
+	case "android", "ios", "wasip3":
 		return false
 	case "aix":
 		return unixEnabledOnAIX

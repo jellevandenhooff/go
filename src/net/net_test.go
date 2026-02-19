@@ -545,6 +545,9 @@ func TestCloseUnblocksReadUDP(t *testing.T) {
 
 // Issue 24808: verify that ECONNRESET is not temporary for read.
 func TestNotTemporaryRead(t *testing.T) {
+	if runtime.GOOS == "wasip3" {
+		t.Skip("skipping: SetLinger(0) not supported on wasip3, so close sends FIN not RST")
+	}
 	t.Parallel()
 
 	ln := newLocalListener(t, "tcp")

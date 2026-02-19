@@ -32,6 +32,11 @@ func SkipTestAllocations(t *testing.T) {
 		t.Skip("skipping allocations test on plan9")
 	}
 
+	// wasip3 has different allocation patterns due to component model overhead.
+	if runtime.GOOS == "wasip3" {
+		t.Skip("skipping allocations test on wasip3")
+	}
+
 	// s390x deviates from other assembly implementations and is very hard to
 	// test due to the lack of LUCI builders. See #67307.
 	if runtime.GOARCH == "s390x" {

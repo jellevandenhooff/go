@@ -7,9 +7,9 @@
 // - if using the netgo build tag on a Unix system
 // - on a Unix system without the cgo resolver functions
 //   (Darwin always provides the cgo functions, in cgo_unix_syscall.go)
-// - on wasip1, where cgo is never available
+// - on wasip1 and wasip3, where cgo is never available
 
-//go:build (netgo && unix) || (unix && !cgo && !darwin) || js || wasip1
+//go:build (netgo && unix) || (unix && !cgo && !darwin) || js || wasip1 || wasip3
 
 package net
 
