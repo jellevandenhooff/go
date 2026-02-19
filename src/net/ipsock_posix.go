@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build unix || js || wasip1 || windows
+//go:build unix || js || wasip1 || wasip3 || windows
 
 package net
 
@@ -32,6 +32,11 @@ func (p *ipStackCapabilities) probe() {
 		p.ipv4Enabled = true
 		p.ipv6Enabled = true
 		p.ipv4MappedIPv6Enabled = true
+		return
+	case "wasip3":
+		// wasip3 supports real IPv4 and IPv6 networking via WASI sockets.
+		p.ipv4Enabled = true
+		p.ipv6Enabled = true
 		return
 	}
 
@@ -158,7 +163,7 @@ func favoriteAddrFamily(network string, laddr, raddr sockaddr, mode string) (fam
 
 func internetSocket(ctx context.Context, net string, laddr, raddr sockaddr, sotype, proto int, mode string, ctrlCtxFn func(context.Context, string, string, syscall.RawConn) error) (fd *netFD, err error) {
 	switch runtime.GOOS {
-	case "aix", "windows", "openbsd", "js", "wasip1":
+	case "aix", "windows", "openbsd", "js", "wasip1", "wasip3":
 		if mode == "dial" && raddr.isWildcard() {
 			raddr = raddr.toLocal(net)
 		}

@@ -108,8 +108,15 @@ func readRandom(r []byte) int {
 }
 
 func goenvs() {
-	// Stub: args and env are provided by the syscall package.
+	argslice = wasip3Args()
+	envs = wasip3Envs()
 }
+
+//go:linkname wasip3Args syscall.wasip3Args
+func wasip3Args() []string
+
+//go:linkname wasip3Envs syscall.wasip3Envs
+func wasip3Envs() []string
 
 func walltime() (sec int64, nsec int32) {
 	return walltime1()

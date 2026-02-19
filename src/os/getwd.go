@@ -24,11 +24,14 @@ var getwdCache struct {
 // provides an absolute name, and it is a name of the
 // current directory, it is returned.
 func Getwd() (dir string, err error) {
-	if runtime.GOOS == "windows" || runtime.GOOS == "plan9" {
+	if runtime.GOOS == "windows" || runtime.GOOS == "plan9" || runtime.GOOS == "wasip3" {
 		// Use syscall.Getwd directly for
 		//   - plan9: see reasons in CL 89575;
 		//   - windows: syscall implementation is sufficient,
-		//     and we should not rely on $PWD.
+		//     and we should not rely on $PWD;
+		//   - wasip3: WASI component model stat does not provide
+		//     device/inode, so the $PWD SameFile check is unreliable.
+		//     syscall.Getwd tracks cwd correctly.
 		dir, err = syscall.Getwd()
 		return dir, NewSyscallError("getwd", err)
 	}
