@@ -66,34 +66,36 @@ func readWasmImport(ldr *loader.Loader, s loader.Sym) obj.WasmImport {
 }
 
 var wasmFuncTypes = map[string]*wasmFuncType{
-	"_rt0_wasm_js":            {Params: []byte{}},                                         //
-	"_rt0_wasm_wasip1":        {Params: []byte{}},                                         //
-	"_rt0_wasm_wasip1_lib":    {Params: []byte{}},                                         //
-	"_rt0_wasm32_wasip1":      {Params: []byte{}},                                         //
-	"_rt0_wasm32_wasip1_lib":  {Params: []byte{}},                                         //
-	"wasm_export__start":      {},                                                         //
-	"wasm_export_run":         {Params: []byte{I32, I32}},                                 // argc, argv
-	"wasm_export_resume":      {Params: []byte{}},                                         //
-	"wasm_export_getsp":       {Results: []byte{I32}},                                     // sp
-	"wasm_pc_f_loop":          {Params: []byte{}},                                         //
-	"wasm_pc_f_loop_export":   {Params: []byte{I32}},                                      // pc_f
-	"runtime.wasmDiv":         {Params: []byte{I64, I64}, Results: []byte{I64}},           // x, y -> x/y
-	"runtime.wasmTruncS":      {Params: []byte{F64}, Results: []byte{I64}},                // x -> int(x)
-	"runtime.wasmTruncU":      {Params: []byte{F64}, Results: []byte{I64}},                // x -> uint(x)
-	"gcWriteBarrier":          {Params: []byte{I64}, Results: []byte{I64}},                // #bytes -> bufptr
-	"runtime.gcWriteBarrier1": {Results: []byte{I64}},                                     // -> bufptr
-	"runtime.gcWriteBarrier2": {Results: []byte{I64}},                                     // -> bufptr
-	"runtime.gcWriteBarrier3": {Results: []byte{I64}},                                     // -> bufptr
-	"runtime.gcWriteBarrier4": {Results: []byte{I64}},                                     // -> bufptr
-	"runtime.gcWriteBarrier5": {Results: []byte{I64}},                                     // -> bufptr
-	"runtime.gcWriteBarrier6": {Results: []byte{I64}},                                     // -> bufptr
-	"runtime.gcWriteBarrier7": {Results: []byte{I64}},                                     // -> bufptr
-	"runtime.gcWriteBarrier8": {Results: []byte{I64}},                                     // -> bufptr
-	"runtime.notInitialized":  {},                                                         //
-	"cmpbody":                 {Params: []byte{I64, I64, I64, I64}, Results: []byte{I64}}, // a, alen, b, blen -> -1/0/1
-	"memeqbody":               {Params: []byte{I64, I64, I64}, Results: []byte{I64}},      // a, b, len -> 0/1
-	"memcmp":                  {Params: []byte{I32, I32, I32}, Results: []byte{I32}},      // a, b, len -> <0/0/>0
-	"memchr":                  {Params: []byte{I32, I32, I32}, Results: []byte{I32}},      // s, c, len -> index
+	"_rt0_wasm_js":                 {Params: []byte{}},                                         //
+	"_rt0_wasm_wasip1":             {Params: []byte{}},                                         //
+	"_rt0_wasm_wasip1_lib":         {Params: []byte{}},                                         //
+	"_rt0_wasm32_wasip1":           {Params: []byte{}},                                         //
+	"_rt0_wasm32_wasip1_lib":       {Params: []byte{}},                                         //
+	"_rt0_wasm32_wasip3":           {Params: []byte{}, Results: []byte{I32}},                   // -> i32 (async return value)
+	"wasm_export_asyncRunCallback": {Params: []byte{I32, I32, I32}, Results: []byte{I32}},      // event, p1, p2 -> i32
+	"wasm_export__start":           {},                                                         //
+	"wasm_export_run":              {Params: []byte{I32, I32}},                                 // argc, argv
+	"wasm_export_resume":           {Params: []byte{}},                                         //
+	"wasm_export_getsp":            {Results: []byte{I32}},                                     // sp
+	"wasm_pc_f_loop":               {Params: []byte{}},                                         //
+	"wasm_pc_f_loop_export":        {Params: []byte{I32}},                                      // pc_f
+	"runtime.wasmDiv":              {Params: []byte{I64, I64}, Results: []byte{I64}},           // x, y -> x/y
+	"runtime.wasmTruncS":           {Params: []byte{F64}, Results: []byte{I64}},                // x -> int(x)
+	"runtime.wasmTruncU":           {Params: []byte{F64}, Results: []byte{I64}},                // x -> uint(x)
+	"gcWriteBarrier":               {Params: []byte{I64}, Results: []byte{I64}},                // #bytes -> bufptr
+	"runtime.gcWriteBarrier1":      {Results: []byte{I64}},                                     // -> bufptr
+	"runtime.gcWriteBarrier2":      {Results: []byte{I64}},                                     // -> bufptr
+	"runtime.gcWriteBarrier3":      {Results: []byte{I64}},                                     // -> bufptr
+	"runtime.gcWriteBarrier4":      {Results: []byte{I64}},                                     // -> bufptr
+	"runtime.gcWriteBarrier5":      {Results: []byte{I64}},                                     // -> bufptr
+	"runtime.gcWriteBarrier6":      {Results: []byte{I64}},                                     // -> bufptr
+	"runtime.gcWriteBarrier7":      {Results: []byte{I64}},                                     // -> bufptr
+	"runtime.gcWriteBarrier8":      {Results: []byte{I64}},                                     // -> bufptr
+	"runtime.notInitialized":       {},                                                         //
+	"cmpbody":                      {Params: []byte{I64, I64, I64, I64}, Results: []byte{I64}}, // a, alen, b, blen -> -1/0/1
+	"memeqbody":                    {Params: []byte{I64, I64, I64}, Results: []byte{I64}},      // a, b, len -> 0/1
+	"memcmp":                       {Params: []byte{I32, I32, I32}, Results: []byte{I32}},      // a, b, len -> <0/0/>0
+	"memchr":                       {Params: []byte{I32, I32, I32}, Results: []byte{I32}},      // s, c, len -> index
 }
 
 func assignAddress(ldr *loader.Loader, sect *sym.Section, n int, s loader.Sym, va uint64, isTramp bool) (*sym.Section, int, uint64) {
@@ -448,6 +450,46 @@ func writeExportSec(ctxt *ld.Link, ldr *loader.Loader, lenHostImports int) {
 		writeName(ctxt.Out, "memory") // memory in wasi
 		ctxt.Out.WriteByte(0x02)      // mem export
 		writeUleb128(ctxt.Out, 0)     // memidx
+	case "wasip3":
+		if ctxt.BuildMode != ld.BuildModeExe {
+			ld.Exitf("unsupported build mode %v for wasip3", ctxt.BuildMode)
+		}
+		writeUleb128(ctxt.Out, uint64(3+len(ldr.WasmExports))) // number of exports
+
+		const wasiRunExport = "wasi:cli/run@0.3.0-rc-2026-02-09"
+
+		// Export entry point: [async-lift]wasi:cli/run@...#run
+		entry := fmt.Sprintf("_rt0_%s_wasip3", buildcfg.GOARCH)
+		s := ldr.Lookup(entry, 0)
+		if s == 0 {
+			ld.Exitf("export symbol %s not defined", entry)
+		}
+		idx := uint32(lenHostImports) + uint32(ldr.SymValue(s)>>16) - funcValueOffset
+		writeName(ctxt.Out, "[async-lift]"+wasiRunExport+"#run")
+		ctxt.Out.WriteByte(0x00)            // func export
+		writeUleb128(ctxt.Out, uint64(idx)) // funcidx
+
+		// Export callback: [callback][async-lift]wasi:cli/run@...#run
+		s = ldr.Lookup("wasm_export_asyncRunCallback", 0)
+		if s == 0 {
+			ld.Exitf("export symbol wasm_export_asyncRunCallback not defined")
+		}
+		idx = uint32(lenHostImports) + uint32(ldr.SymValue(s)>>16) - funcValueOffset
+		writeName(ctxt.Out, "[callback][async-lift]"+wasiRunExport+"#run")
+		ctxt.Out.WriteByte(0x00)            // func export
+		writeUleb128(ctxt.Out, uint64(idx)) // funcidx
+
+		for _, s := range ldr.WasmExports {
+			idx := uint32(lenHostImports) + uint32(ldr.SymValue(s)>>16) - funcValueOffset
+			writeName(ctxt.Out, ldr.SymName(s))
+			ctxt.Out.WriteByte(0x00)            // func export
+			writeUleb128(ctxt.Out, uint64(idx)) // funcidx
+		}
+
+		writeName(ctxt.Out, "memory") // memory
+		ctxt.Out.WriteByte(0x02)      // mem export
+		writeUleb128(ctxt.Out, 0)     // memidx
+
 	case "js":
 		writeUleb128(ctxt.Out, uint64(4+len(ldr.WasmExports))) // number of exports
 		for _, name := range []string{"run", "resume", "getsp"} {
