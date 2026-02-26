@@ -57,6 +57,7 @@ var depsRules = `
 	  internal/itoa,
 	  internal/nettrace,
 	  internal/platform,
+	  internal/wasi,
 	  internal/profilerecord,
 	  internal/runtime/pprof/label,
 	  internal/syslist,
@@ -85,6 +86,7 @@ var depsRules = `
 	internal/goexperiment,
 	internal/goos,
 	internal/itoa,
+	internal/wasi,
 	internal/profilerecord,
 	internal/runtime/pprof/label,
 	internal/strconv,
@@ -149,6 +151,10 @@ var depsRules = `
 	# SYSCALL is RUNTIME plus the packages necessary for basic system calls.
 	RUNTIME, unicode/utf8, unicode/utf16, internal/synctest
 	< internal/syscall/windows/sysdll, syscall/js
+	< internal/wasi/generated/clocks
+	< internal/wasi/generated/cli, internal/wasi/generated/filesystem,
+	  internal/wasi/generated/random, internal/wasi/generated/sockets
+	< internal/wasi/posix
 	< syscall
 	< internal/syscall/unix, internal/syscall/windows, internal/syscall/windows/registry
 	< internal/syscall/execenv
