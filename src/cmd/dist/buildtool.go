@@ -121,6 +121,9 @@ var ignoreSuffixes = []string{
 	".pgo",
 	// Skip editor backup files.
 	"~",
+	// Skip wasip3 files — they import internal/wasi which is not
+	// available during bootstrap and not needed for the host toolchain.
+	"_wasip3.go",
 }
 
 const minBootstrap = "go1.24.6"

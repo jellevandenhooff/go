@@ -16,6 +16,9 @@
 //
 // This is a prototype tailored for the Go standard library's needs,
 // producing slim bindings without a heavyweight runtime library.
+//
+//go:build witgen
+
 package main
 
 import (

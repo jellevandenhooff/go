@@ -15,7 +15,7 @@ WIT=src/internal/wasi/wit
 WITGEN="${WITGEN:-$(mktemp -d)/witgen}"
 
 echo "Building witgen..."
-go build -o "$WITGEN" ./src/internal/wasi/cmd/witgen/
+go build -tags witgen -o "$WITGEN" ./src/internal/wasi/cmd/witgen/
 
 WITJSON=$(wasm-tools component wit --json "$WIT")
 
