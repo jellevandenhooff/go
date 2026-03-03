@@ -7,7 +7,10 @@
 # Called by `go test` and `go run` when GOOS=wasip3 GOARCH=wasm32.
 #
 # Takes a .wasm core module, wraps it as a WASI 0.3 component,
-# and runs it with wasmtime's P3 async support.
+# and runs it with wasmtime or wcjs.
+#
+# Set GOWASIRUNTIME=wcjs to use the Node.js-based runner.
+# Set WCJS to the @jellevdh/wcjs directory (defaults to npx lookup).
 
 set -eo pipefail
 
@@ -41,49 +44,69 @@ COMPONENT="$TMPOUT/component.wasm"
 wasm-tools component embed "$WIT_DIR" --world command "$WASM" -o "$EMBEDDED"
 wasm-tools component new "$EMBEDDED" -o "$COMPONENT"
 
-# Run with wasmtime using P3 async support.
-# Grant full filesystem access, networking, and environment inheritance
-# so that Go test binaries can function properly.
-#
-# We need a wasmtime build from main (post-v42.0.1) that includes:
-#   - PR #12550: borrow state tracking fix for async tasks (e.g. closing
-#     a UDP socket while a receive is pending)
-#   - PR #12570: subtask reparenting removal
-#   - PR #12640: host subtask cancellation fix
-# These are expected to ship in wasmtime v43.0.0. Until then, a
-# build from main may be needed.
-#
-# Tracing: set WASMTIME_LOG to enable wasmtime trace logging, e.g.:
-#   WASMTIME_LOG=wasmtime_runtime::component::concurrent=trace
-# This is useful for debugging async subtask lifecycle issues.
-# The trace output goes to stderr of the wasmtime process.
+# Run the component with the selected runtime.
 case "${GOWASIRUNTIME:-wasmtime}" in
     "wasmtime")
+        # Grant full filesystem access, networking, and environment inheritance
+        # so that Go test binaries can function properly.
+        #
+        # We need a wasmtime build from main (post-v42.0.1) that includes:
+        #   - PR #12550: borrow state tracking fix for async tasks (e.g. closing
+        #     a UDP socket while a receive is pending)
+        #   - PR #12570: subtask reparenting removal
+        #   - PR #12640: host subtask cancellation fix
+        # These are expected to ship in wasmtime v43.0.0. Until then, a
+        # build from main may be needed.
+        #
+        # Tracing: set WASMTIME_LOG to enable wasmtime trace logging, e.g.:
+        #   WASMTIME_LOG=wasmtime_runtime::component::concurrent=trace
+        # This is useful for debugging async subtask lifecycle issues.
+        # The trace output goes to stderr of the wasmtime process.
+        if [ -n "$WASMTIME" ]; then
+            if [ ! -x "$WASMTIME" ]; then
+                echo "go_wasip3_wasm32_exec: WASMTIME not found or not executable: $WASMTIME" >&2
+                exit 1
+            fi
+        else
+            WASMTIME="wasmtime"
+        fi
+        exec "$WASMTIME" run \
+            -S p3 \
+            -W component-model-async \
+            -W component-model-async-builtins \
+            -W max-wasm-stack=8388608 \
+            -S tcp \
+            -S udp \
+            -S inherit-network \
+            -S inherit-env \
+            --dir=/ \
+            ${GOWASIRUNTIMEARGS:-} \
+            "$COMPONENT" \
+            "$@"
+        ;;
+    "wcjs")
+        if [ -n "$WCJS" ]; then
+            exec npx --prefix "$WCJS" @jellevdh/wcjs run \
+                --inherit-env \
+                --inherit-network \
+                --no-jspi \
+                --dir /=/ \
+                ${GOWASIRUNTIMEARGS:-} \
+                "$COMPONENT" \
+                -- "$@"
+        else
+            exec npx @jellevdh/wcjs run \
+                --inherit-env \
+                --inherit-network \
+                --no-jspi \
+                --dir /=/ \
+                ${GOWASIRUNTIMEARGS:-} \
+                "$COMPONENT" \
+                -- "$@"
+        fi
         ;;
     *)
-        echo "go_wasip3_wasm32_exec: unsupported GOWASIRUNTIME=$GOWASIRUNTIME (only wasmtime supports WASI P3)" >&2
+        echo "go_wasip3_wasm32_exec: unsupported GOWASIRUNTIME=$GOWASIRUNTIME (supported: wasmtime, wcjs)" >&2
         exit 1
         ;;
 esac
-
-if [ -n "$WASMTIME" ]; then
-    if [ ! -x "$WASMTIME" ]; then
-        echo "go_wasip3_wasm32_exec: WASMTIME not found or not executable: $WASMTIME" >&2
-        exit 1
-    fi
-else
-    WASMTIME="wasmtime"
-fi
-exec "$WASMTIME" run \
-    -S p3 \
-    -W component-model-async \
-    -W component-model-async-builtins \
-    -W max-wasm-stack=8388608 \
-    -S tcp \
-    -S udp \
-    -S inherit-network \
-    -S inherit-env \
-    --dir=/ \
-    ${GOWASIRUNTIMEARGS:-} \
-    "$COMPONENT" \
-    "$@"

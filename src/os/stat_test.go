@@ -38,13 +38,19 @@ func testStatAndLstat(t *testing.T, path string, params testStatAndLstatParams) 
 	}
 	params.lstatCheck(t, path, lsfi)
 
-	if params.isLink {
-		if os.SameFile(sfi, lsfi) {
-			t.Errorf("stat and lstat of %q should not be the same", path)
-		}
-	} else {
-		if !os.SameFile(sfi, lsfi) {
-			t.Errorf("stat and lstat of %q should be the same", path)
+	// WASI does not expose inode numbers, so SameFile cannot
+	// distinguish different filesystem objects.
+	hasSameFile := runtime.GOOS != "wasip3"
+
+	if hasSameFile {
+		if params.isLink {
+			if os.SameFile(sfi, lsfi) {
+				t.Errorf("stat and lstat of %q should not be the same", path)
+			}
+		} else {
+			if !os.SameFile(sfi, lsfi) {
+				t.Errorf("stat and lstat of %q should be the same", path)
+			}
 		}
 	}
 
@@ -63,17 +69,19 @@ func testStatAndLstat(t *testing.T, path string, params testStatAndLstatParams) 
 	}
 	params.statCheck(t, path, sfi2)
 
-	if !os.SameFile(sfi, sfi2) {
-		t.Errorf("stat of open %q file and stat of %q should be the same", path, path)
-	}
-
-	if params.isLink {
-		if os.SameFile(sfi2, lsfi) {
-			t.Errorf("stat of opened %q file and lstat of %q should not be the same", path, path)
+	if hasSameFile {
+		if !os.SameFile(sfi, sfi2) {
+			t.Errorf("stat of open %q file and stat of %q should be the same", path, path)
 		}
-	} else {
-		if !os.SameFile(sfi2, lsfi) {
-			t.Errorf("stat of opened %q file and lstat of %q should be the same", path, path)
+
+		if params.isLink {
+			if os.SameFile(sfi2, lsfi) {
+				t.Errorf("stat of opened %q file and lstat of %q should not be the same", path, path)
+			}
+		} else {
+			if !os.SameFile(sfi2, lsfi) {
+				t.Errorf("stat of opened %q file and lstat of %q should be the same", path, path)
+			}
 		}
 	}
 
@@ -109,7 +117,7 @@ func testStatAndLstat(t *testing.T, path string, params testStatAndLstatParams) 
 	}
 	params.lstatCheck(t, path, lsfi2)
 
-	if !os.SameFile(lsfi, lsfi2) {
+	if hasSameFile && !os.SameFile(lsfi, lsfi2) {
 		t.Errorf("lstat of %q file in %q directory and %q should be the same", lsfi2.Name(), parentdir, path)
 	}
 }
@@ -179,6 +187,10 @@ func testSymlinkStats(t *testing.T, path string, isdir bool) {
 }
 
 func testSymlinkSameFile(t *testing.T, path, link string) {
+	if runtime.GOOS == "wasip3" {
+		t.Skip("WASI does not expose inode numbers")
+	}
+
 	pathfi, err := os.Stat(path)
 	if err != nil {
 		t.Error(err)
@@ -205,6 +217,10 @@ func testSymlinkSameFile(t *testing.T, path, link string) {
 }
 
 func testSymlinkSameFileOpen(t *testing.T, link string) {
+	if runtime.GOOS == "wasip3" {
+		t.Skip("WASI does not expose inode numbers")
+	}
+
 	f, err := os.Open(link)
 	if err != nil {
 		t.Error(err)
