@@ -37,8 +37,9 @@ import (
 
 // Callback return codes. Set in asyncReturnValue before pausePC().
 const (
-	callbackExit = 0
-	callbackWait = 2
+	callbackExit  = 0
+	callbackYield = 1
+	callbackWait  = 2
 )
 
 // asyncReturnValue is set before calling pausePC(). The callback trampoline

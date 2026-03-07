@@ -39,9 +39,15 @@ trap 'rm -rf "$TMPOUT"' EXIT
 EMBEDDED="$TMPOUT/embedded.wasm"
 COMPONENT="$TMPOUT/component.wasm"
 
+# Select world based on GOEXPERIMENT.
+WORLD="command"
+if echo "${GOEXPERIMENT:-}" | grep -q wasiexec; then
+  WORLD="command-with-exec"
+fi
+
 # Embed component type info and create component.
 # wasm-tools stderr is useful for diagnosing component creation failures.
-wasm-tools component embed "$WIT_DIR" --world command "$WASM" -o "$EMBEDDED"
+wasm-tools component embed "$WIT_DIR" --world "$WORLD" "$WASM" -o "$EMBEDDED"
 wasm-tools component new "$EMBEDDED" -o "$COMPONENT"
 
 # Run the component with the selected runtime.
@@ -74,6 +80,8 @@ case "${GOWASIRUNTIME:-wasmtime}" in
             -S p3 \
             -W component-model-async \
             -W component-model-async-builtins \
+            -W component-model-async-stackful \
+            -W component-model-threading \
             -W max-wasm-stack=8388608 \
             -S tcp \
             -S udp \

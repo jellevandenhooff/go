@@ -1,0 +1,22 @@
+package wasi:exec@0.1.0;
+
+/// Process execution interface for running child WASI components.
+interface exec {
+  /// Execute a child WASI component.
+  ///
+  /// The host loads the component at `path`, instantiates it with the given
+  /// arguments and environment, and runs its wasi:cli/run export.
+  ///
+  /// stdout-path and stderr-path are filesystem paths where the host will
+  /// write the captured stdout and stderr of the child process.
+  ///
+  /// Returns the exit code on success, or an error string on failure.
+  exec: async func(
+    path: string,
+    args: list<string>,
+    env: list<string>,
+    cwd: option<string>,
+    stdout-path: string,
+    stderr-path: string,
+  ) -> result<u32, string>;
+}

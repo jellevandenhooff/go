@@ -4158,6 +4158,10 @@ top:
 	pp := mp.p.ptr()
 	pp.preempt = false
 
+	// On wasip3, periodically yield to the host so the browser can
+	// repaint during long-running CPU-bound compilations.
+	maybeYieldToHost()
+
 	// Safety check: if we are spinning, the run queue should be empty.
 	// Check this before calling checkTimers, as that might call
 	// goready to put a ready goroutine on the local run queue.

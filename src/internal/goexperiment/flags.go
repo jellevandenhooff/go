@@ -128,4 +128,8 @@ type Flags struct {
 
 	// RuntimeSecret enables the runtime/secret package.
 	RuntimeSecret bool
+
+	// WasiExec enables the wasi:exec/exec import for wasip3,
+	// allowing process execution via child WASI components.
+	WasiExec bool
 }

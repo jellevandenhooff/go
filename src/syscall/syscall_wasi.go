@@ -297,8 +297,8 @@ const (
 
 type WaitStatus uint32
 
-func (w WaitStatus) Exited() bool       { return false }
-func (w WaitStatus) ExitStatus() int    { return 0 }
+func (w WaitStatus) Exited() bool       { return w&0xff == 0 }
+func (w WaitStatus) ExitStatus() int    { return int(w>>8) & 0xff }
 func (w WaitStatus) Signaled() bool     { return false }
 func (w WaitStatus) Signal() Signal     { return 0 }
 func (w WaitStatus) CoreDump() bool     { return false }
@@ -397,13 +397,9 @@ func Sendfile(outfd int, infd int, offset *int64, count int) (written int, err e
 	return 0, ENOSYS
 }
 
-func StartProcess(argv0 string, argv []string, attr *ProcAttr) (pid int, handle uintptr, err error) {
-	return 0, 0, ENOSYS
-}
-
-func Wait4(pid int, wstatus *WaitStatus, options int, rusage *Rusage) (wpid int, err error) {
-	return 0, ENOSYS
-}
+// StartProcess and Wait4 are defined per-platform:
+//   - wasip1: exec_wasip1.go (returns ENOSYS)
+//   - wasip3: exec_wasip3.go (uses WASI exec import)
 
 func Umask(mask int) int {
 	return 0

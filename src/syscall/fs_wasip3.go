@@ -260,6 +260,13 @@ func Close(fdNum int) error {
 	if f == nil {
 		return EBADF
 	}
+	if f.IsPipe {
+		if f.PipeWrite != nil {
+			f.PipeWrite.CloseWrite()
+		}
+		posix.Free(fdNum)
+		return nil
+	}
 	if f.IsSock {
 		posix.SockClose(f)
 		posix.Free(fdNum)
@@ -279,6 +286,9 @@ func Read(fdNum int, b []byte) (int, error) {
 	}
 	if len(b) == 0 {
 		return 0, nil
+	}
+	if f.IsPipe && f.PipeRead != nil {
+		return f.PipeRead.Read(b)
 	}
 	if f.IsSock {
 		if f.IsUDP {
@@ -306,6 +316,9 @@ func Write(fdNum int, b []byte) (int, error) {
 	f := posix.Lookup(fdNum)
 	if f == nil {
 		return 0, EBADF
+	}
+	if f.IsPipe && f.PipeWrite != nil {
+		return f.PipeWrite.Write(b)
 	}
 	if f.IsSock {
 		if f.IsUDP {

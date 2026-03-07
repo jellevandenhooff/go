@@ -42,6 +42,11 @@ type CMFD struct {
 	// Returns the copy result if completed, or wasi.Blocked (-1) if pending.
 	readCancel  func(int32) int32 // [async-lower]stream-cancel-read-0
 	writeCancel func(int32) int32 // [async-lower]stream-cancel-write-0
+
+	// Pipe fields (set for in-memory pipe FDs used by exec)
+	IsPipe    bool
+	PipeRead  *PipeBuf // non-nil on the read end
+	PipeWrite *PipeBuf // non-nil on the write end
 }
 
 const MaxFDs = 256
@@ -147,6 +152,9 @@ func FDStatGetFlags(goFd int) (uint32, error) {
 	if f == nil {
 		return 0, ErrBADF
 	}
+	if f.IsPipe {
+		return 0, nil // pipes have no special flags
+	}
 	result := f.Desc.GetFlags()
 	if result.IsErr() {
 		return 0, FSErrorCode(result.Err())
@@ -167,6 +175,9 @@ func FDStatGetType(goFd int) (uint8, error) {
 	f := Lookup(goFd)
 	if f == nil {
 		return 0, ErrBADF
+	}
+	if f.IsPipe {
+		return 0, nil // FILETYPE_UNKNOWN for pipes
 	}
 	result := f.Desc.GetType()
 	if result.IsErr() {

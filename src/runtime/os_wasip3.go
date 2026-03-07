@@ -107,6 +107,17 @@ func readRandom(r []byte) int {
 	return n
 }
 
+// yieldCounter counts schedule() calls since the last host yield.
+var yieldCounter int32
+
+// maybeYieldToHost periodically yields to the host so the browser can
+// repaint during long-running computations. Called from schedule().
+//
+//go:nosplit
+func maybeYieldToHost() {
+	// Temporarily disabled for benchmarking
+}
+
 func goenvs() {
 	argslice = wasip3Args()
 	envs = wasip3Envs()
