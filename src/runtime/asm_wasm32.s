@@ -521,22 +521,29 @@ TEXT wasm_pc_f_loop(SB),NOSPLIT,$0
 // The Go stack on the linear memory is then used to jump to the correct functions
 // with this loop, without having to restore the full WebAssembly stack.
 // It is expected to have a pending call before entering the loop, so check PAUSE first.
+//
+// wasm32 encoding: PC = PC_F << 5 | offset
+// The full 32-bit PC is passed as the PC_B parameter to the callee.
+// The callee subtracts its own base PC to recover the resume point index.
 	Get PAUSE
 	I32Eqz
 	If
 	loop:
 		Loop
-			// Get PC_B & PC_F from return address slot at -8(SP)
-			// The slot is 8 bytes (for alignment) but only lower 4 bytes hold the PC.
+			// Load full 32-bit PC from return address slot at -8(SP)
 			Get SP
 			I32Const $8
 			I32Sub
-			I32Load16U $0 // PC_B (bits 0-15)
+			I32Load $0 // full PC (32-bit)
+			Set R0     // save full PC
 
-			Get SP
-			I32Const $8
-			I32Sub
-			I32Load16U $2 // PC_F (bits 16-31, max 65535 functions)
+			// Pass full PC as PC_B parameter (callee subtracts its base)
+			Get R0
+
+			// Compute table index: PC >> wasmPCBBits
+			Get R0
+			I32Const $const_wasmPCBBits
+			I32ShrU
 
 			CallIndirect $0
 			Drop
@@ -553,10 +560,9 @@ TEXT wasm_pc_f_loop(SB),NOSPLIT,$0
 	Return
 
 // wasm_pc_f_loop_export is like wasm_pc_f_loop, except that this takes an
-// argument (on Wasm stack) that is a PC_F, and the loop stops when we get
-// to that PC in a normal return (not unwinding).
-// This is for handling an wasmexport function when it needs to switch the
-// stack.
+// argument (on Wasm stack) that is a PC_F (table index), and the loop stops
+// when we return to that function in a normal return (not unwinding).
+// This is for handling a wasmexport function when it needs to switch the stack.
 TEXT wasm_pc_f_loop_export(SB),NOSPLIT,$0
 	Get PAUSE
 	I32Eqz
@@ -568,28 +574,32 @@ outer:
 		Set R1
 	loop:
 		Loop
-			// Get PC_F & PC_B from return address slot at -8(SP)
+			// Load full 32-bit PC from return address slot at -8(SP)
 			Get SP
 			I32Const $8
 			I32Sub
-			I32Load16U $2 // PC_F (bits 16-31)
-			Tee R2
+			I32Load $0 // full PC
+			Tee R2     // save full PC
+
+			// Compute table index: PC >> wasmPCBBits
+			I32Const $const_wasmPCBBits
+			I32ShrU
+			Tee R3     // save table index
 
 			Get R0
 			I32Eq
-			If // PC_F == R0, we're at the stop PC
+			If // table index == R0 (stop PC_F), we're at the target function
 				Get R1
 				I32Eqz
 				// Break if it is a normal return
 				BrIf outer // actually jump to after the corresponding End
 			End
 
-			Get SP
-			I32Const $8
-			I32Sub
-			I32Load16U $0 // PC_B
+			// Pass full PC as PC_B parameter
+			Get R2
 
-			Get R2 // PC_F
+			// Table index for call_indirect
+			Get R3
 			CallIndirect $0
 			Set R1 // save return/unwinding state for next iteration
 
@@ -616,9 +626,9 @@ TEXT runtime·pause(SB), NOSPLIT, $0-4
 // Called if a wasmexport function is called before runtime initialization
 TEXT runtime·notInitialized(SB), NOSPLIT, $0
 	MOVD $runtime·wasmStack+(m0Stack__size-16-8)(SB), SP
-	I32Const $0 // entry PC_B
+	I32Const $runtime·notInitialized1(SB) // entry PC_B = callee's base PC
 	Call runtime·notInitialized1(SB)
 	Drop
-	I32Const $0 // entry PC_B
+	I32Const $runtime·abort(SB) // entry PC_B = callee's base PC
 	Call runtime·abort(SB)
 	UNDEF

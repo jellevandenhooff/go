@@ -141,7 +141,11 @@ func computeDeferReturn(ctxt *Link, deferReturnSym, s loader.Sym) uint32 {
 			// before the deferreturn call. The "PC" of
 			// the deferreturn call is stored in the
 			// R_ADDR relocation on the ARESUMEPOINT.
-			lastWasmAddr = uint32(r.Add())
+			// Only track R_ADDR relocations that point to the function itself
+			// (resume point addresses), not R_ADDR for callee base PCs.
+			if r.Sym() == s {
+				lastWasmAddr = uint32(r.Add())
+			}
 		}
 		if r.Type().IsDirectCall() && (r.Sym() == deferReturnSym || ldr.IsDeferReturnTramp(r.Sym())) {
 			if target.IsWasm() {
@@ -628,10 +632,11 @@ func (state *pclntab) generateFuncdata(ctxt *Link, funcs []loader.Sym, inlsyms m
 				// is from the start of the first one.
 				o -= int64(Segtext.Sections[0].Vaddr)
 				if ctxt.Target.IsWasm() {
-					if o&(1<<16-1) != 0 {
+					shift := uint(ctxt.Target.Arch.WasmPCBBits)
+					if o&(1<<shift-1) != 0 {
 						ctxt.Errorf(fdSym, "textoff relocation does not target function entry for funcdata symbol: %s %#x", ldr.SymName(rs), o)
 					}
-					o >>= 16
+					o >>= shift
 				}
 			}
 			o += r.Add()
@@ -779,12 +784,13 @@ func textOff(ctxt *Link, s loader.Sym, textStart int64) uint32 {
 	}
 	if ctxt.IsWasm() {
 		// On Wasm, the function table contains just the function index, whereas
-		// the "PC" (s's Value) is function index << 16 + block index (see
+		// the "PC" (s's Value) is function index << shift + block index (see
 		// ../wasm/asm.go:assignAddress).
-		if off&(1<<16-1) != 0 {
+		shift := uint(ctxt.Arch.WasmPCBBits)
+		if off&(1<<shift-1) != 0 {
 			ctxt.Errorf(s, "nonzero PC_B at function entry: %#x", off)
 		}
-		off >>= 16
+		off >>= shift
 	}
 	if int64(uint32(off)) != off {
 		ctxt.Errorf(s, "textOff overflow: %#x", off)
@@ -808,7 +814,15 @@ func writePCToFunc(ctxt *Link, sb *loader.SymbolBuilder, funcs []loader.Sym, sta
 	lastFunc := funcs[len(funcs)-1]
 	lastPC := pcOff(lastFunc) + uint32(ldr.SymSize(lastFunc))
 	if ctxt.IsWasm() {
-		lastPC = pcOff(lastFunc) + 1 // On Wasm it is function index (see above)
+		shift := uint(ctxt.Arch.WasmPCBBits)
+		// On Wasm, pcOff is the function index. A function may occupy
+		// multiple table slots if it has more than 1<<WasmPCBBits resume points.
+		size := ldr.SymSize(lastFunc)
+		numSlots := int64(1)
+		if shift < 16 && size > 1<<shift {
+			numSlots = (size + (1 << shift) - 1) >> shift
+		}
+		lastPC = pcOff(lastFunc) + uint32(numSlots)
 	}
 	sb.SetUint32(ctxt.Arch, int64(len(funcs))*2*4, lastPC)
 }

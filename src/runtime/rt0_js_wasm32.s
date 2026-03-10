@@ -29,7 +29,7 @@ TEXT wasm_export_run(SB),NOSPLIT,$0
 	Get R1 // argv
 	I32Store $4
 
-	I32Const $0 // entry PC_B
+	I32Const $runtime·rt0_go(SB)
 	Call runtime·rt0_go(SB)
 	Drop
 	Call wasm_pc_f_loop(SB)
@@ -39,7 +39,7 @@ TEXT wasm_export_run(SB),NOSPLIT,$0
 // wasm_export_resume gets called from JavaScript. It resumes the execution of Go code until it needs to wait for
 // an event.
 TEXT wasm_export_resume(SB),NOSPLIT,$0
-	I32Const $0
+	I32Const $runtime·handleEvent(SB)
 	Call runtime·handleEvent(SB)
 	Drop
 	Call wasm_pc_f_loop(SB)
@@ -52,7 +52,7 @@ TEXT wasm_export_getsp(SB),NOSPLIT,$0
 	Return
 
 TEXT runtime·exit(SB), NOSPLIT, $0-4
-	I32Const $0
+	I32Const $runtime·wasmExit(SB)
 	Call runtime·wasmExit(SB)
 	I32Const $1
 	Set PAUSE

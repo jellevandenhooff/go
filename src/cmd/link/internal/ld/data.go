@@ -498,12 +498,13 @@ func (st *relocSymState) relocsym(s loader.Sym, P []byte) {
 				o = ldr.SymValue(rs) - int64(Segtext.Sections[0].Vaddr) + r.Add()
 				if target.IsWasm() {
 					// On Wasm, textoff (e.g. in the method table) is just the function index,
-					// whereas the "PC" (rs's Value) is function index << 16 + block index (see
+					// whereas the "PC" (rs's Value) is function index << shift + block index (see
 					// ../wasm/asm.go:assignAddress).
-					if o&(1<<16-1) != 0 {
+					shift := uint(target.Arch.WasmPCBBits)
+					if o&(1<<shift-1) != 0 {
 						st.err.Errorf(s, "textoff relocation %s does not target function entry: %s %#x", rt, ldr.SymName(rs), o)
 					}
-					o >>= 16
+					o >>= shift
 				}
 			} else {
 				o = ldr.SymValue(rs) - int64(ldr.SymSect(rs).Vaddr) + r.Add()

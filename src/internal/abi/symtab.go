@@ -141,3 +141,7 @@ const (
 const MINFUNC = 16 // minimum size for a function
 
 const FuncTabBucketSize = 256 * MINFUNC // size of bucket in the pc->func lookup table
+
+// ArchWasmPCBBits is defined in build-tagged files (symtab_wasm.go, etc.)
+// for use by runtime code that needs the PC_B shift for the current architecture.
+// Toolchain code should use sys.Arch.WasmPCBBits instead.

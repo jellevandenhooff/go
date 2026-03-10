@@ -14,7 +14,11 @@ TEXT _rt0_wasm_wasip1(SB),NOSPLIT,$0
 #endif
 	MOVD $runtime·wasmStack+(m0Stack__size-16)(SB), SP
 
+#ifdef GOARCH_wasm32
+	I32Const $runtime·rt0_go(SB)
+#else
 	I32Const $0 // entry PC_B
+#endif
 	Call runtime·rt0_go(SB)
 	Drop
 	Call wasm_pc_f_loop(SB)

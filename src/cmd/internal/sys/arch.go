@@ -69,6 +69,11 @@ type Arch struct {
 	// pointer between the hardware stack pointer and the local
 	// variable area.
 	FixedFrameSize int64
+
+	// WasmPCBBits is the number of bits used for PC_B (resume point
+	// offset) in the wasm code pointer encoding: PC = PC_F << WasmPCBBits | PC_B.
+	// Only meaningful for wasm family architectures; 0 for others.
+	WasmPCBBits uint
 }
 
 // InFamily reports whether a is a member of any of the specified
@@ -267,6 +272,7 @@ var ArchWasm = &Arch{
 	CanMergeLoads:  false,
 	HasLR:          false,
 	FixedFrameSize: 0,
+	WasmPCBBits:    16,
 }
 
 var ArchWasm32 = &Arch{
@@ -280,6 +286,7 @@ var ArchWasm32 = &Arch{
 	CanMergeLoads:  false,
 	HasLR:          false,
 	FixedFrameSize: 0,
+	WasmPCBBits:    5,
 }
 
 var Archs = [...]*Arch{

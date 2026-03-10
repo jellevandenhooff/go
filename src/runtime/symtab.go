@@ -658,8 +658,8 @@ func moduledataverify1(datap *moduledata) {
 	maxpc := datap.maxpc
 	if GOARCH == "wasm" || GOARCH == "wasm32" {
 		// On Wasm, the func table contains the function index, whereas
-		// the "PC" is function index << 16 + block index.
-		maxpc = alignUp(maxpc, 1<<16) // round up for end PC
+		// the "PC" is function index << ArchWasmPCBBits + block index.
+		maxpc = alignUp(maxpc, 1<<abi.ArchWasmPCBBits)
 	}
 	if minpc != min || maxpc != max {
 		println("minpc=", hex(minpc), "min=", hex(min), "maxpc=", hex(maxpc), "max=", hex(max))
@@ -710,8 +710,8 @@ func (md *moduledata) textAddr(off32 uint32) uintptr {
 	}
 	if GOARCH == "wasm" || GOARCH == "wasm32" {
 		// On Wasm, a text offset (e.g. in the method table) is function index, whereas
-		// the "PC" is function index << 16 + block index.
-		res <<= 16
+		// the "PC" is function index << ArchWasmPCBBits + block index.
+		res <<= abi.ArchWasmPCBBits
 	}
 	return res
 }
@@ -726,8 +726,8 @@ func (md *moduledata) textOff(pc uintptr) (uint32, bool) {
 	off := pc - md.text
 	if GOARCH == "wasm" || GOARCH == "wasm32" {
 		// On Wasm, the func table contains the function index, whereas
-		// the "PC" is function index << 16 + block index.
-		off >>= 16
+		// the "PC" is function index << ArchWasmPCBBits + block index.
+		off >>= abi.ArchWasmPCBBits
 	}
 	res := uint32(off)
 	if len(md.textsectmap) > 1 {
@@ -934,8 +934,8 @@ func findfunc(pc uintptr) funcInfo {
 	x := uintptr(pcOff) + datap.text - datap.minpc // TODO: are datap.text and datap.minpc always equal?
 	if GOARCH == "wasm" || GOARCH == "wasm32" {
 		// On Wasm, pcOff is the function index, whereas
-		// the "PC" is function index << 16 + block index.
-		x = uintptr(pcOff)<<16 + datap.text - datap.minpc
+		// the "PC" is function index << ArchWasmPCBBits + block index.
+		x = uintptr(pcOff)<<abi.ArchWasmPCBBits + datap.text - datap.minpc
 	}
 	b := x / abi.FuncTabBucketSize
 	i := x % abi.FuncTabBucketSize / (abi.FuncTabBucketSize / nsub)

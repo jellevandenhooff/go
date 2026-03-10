@@ -338,8 +338,16 @@ func preprocess(ctxt *obj.Link, s *obj.LSym, newprog obj.ProgAlloc) {
 	}
 	tableIdxs = append(tableIdxs, uint64(numResumePoints))
 	s.Size = pc + 1
-	if pc >= 1<<16 {
-		ctxt.Diag("function too big: %s exceeds 65536 blocks", s)
+	if ctxt.Arch.Name == "wasm32" {
+		// wasm32 supports long functions via multiple table slots, but
+		// the total virtual address space still limits the PC range.
+		if pc >= 1<<24 {
+			ctxt.Diag("function too big: %s exceeds %d blocks", s, 1<<24)
+		}
+	} else {
+		if pc >= 1<<16 {
+			ctxt.Diag("function too big: %s exceeds %d blocks", s, 1<<16)
+		}
 	}
 
 	if needMoreStack {
@@ -427,24 +435,39 @@ func preprocess(ctxt *obj.Link, s *obj.LSym, newprog obj.ProgAlloc) {
 			switch jmp.To.Type {
 			case obj.TYPE_MEM:
 				if !notUsePC_B[jmp.To.Sym.Name] {
-					// Set PC_B parameter to function entry.
-					p = appendp(p, AI32Const, constAddr(0))
+					if ctxt.Arch.Name == "wasm32" {
+						// Set PC_B parameter to callee's base PC.
+						p = appendp(p, AI32Const, obj.Addr{Type: obj.TYPE_ADDR, Name: obj.NAME_EXTERN, Sym: jmp.To.Sym})
+					} else {
+						// Set PC_B parameter to function entry.
+						p = appendp(p, AI32Const, constAddr(0))
+					}
 				}
 				p = appendp(p, ACall, jmp.To)
 
 			case obj.TYPE_NONE:
-				// (target PC is on stack)
-				p = appendp(p, AI64Const, constAddr(16)) // only needs PC_F bits (16-63), PC_B bits (0-15) are zero
-				p = appendp(p, AI64ShrU)
-				p = appendp(p, AI32WrapI64)
+				// (target PC is on stack as i64)
+				if ctxt.Arch.Name == "wasm32" {
+					// Pass full entry PC as PC_B, shift to get table index.
+					p = appendp(p, AI32WrapI64)             // truncate to 32-bit PC
+					p = appendp(p, ASet, regAddr(REG_PC_B)) // save full PC
+					p = appendp(p, AGet, regAddr(REG_PC_B)) // push as PC_B param
+					p = appendp(p, AGet, regAddr(REG_PC_B)) // push again for table index
+					p = appendp(p, AI32Const, constAddr(int64(ctxt.Arch.WasmPCBBits)))
+					p = appendp(p, AI32ShrU)
+				} else {
+					p = appendp(p, AI64Const, constAddr(int64(ctxt.Arch.WasmPCBBits)))
+					p = appendp(p, AI64ShrU)
+					p = appendp(p, AI32WrapI64)
 
-				// Set PC_B parameter to function entry.
-				// We need to push this before pushing the target PC_F,
-				// so temporarily pop PC_F, using our REG_PC_B as a
-				// scratch register, and push it back after pushing 0.
-				p = appendp(p, ASet, regAddr(REG_PC_B))
-				p = appendp(p, AI32Const, constAddr(0))
-				p = appendp(p, AGet, regAddr(REG_PC_B))
+					// Set PC_B parameter to function entry.
+					// We need to push this before pushing the target PC_F,
+					// so temporarily pop PC_F, using our REG_PC_B as a
+					// scratch register, and push it back after pushing 0.
+					p = appendp(p, ASet, regAddr(REG_PC_B))
+					p = appendp(p, AI32Const, constAddr(0))
+					p = appendp(p, AGet, regAddr(REG_PC_B))
+				}
 
 				p = appendp(p, ACallIndirect)
 
@@ -477,7 +500,7 @@ func preprocess(ctxt *obj.Link, s *obj.LSym, newprog obj.ProgAlloc) {
 				Sym:    s,           // PC_F
 				Offset: pcAfterCall, // PC_B
 			})
-			if ctxt.Arch.PtrSize == 4 {
+			if ctxt.Arch.Name == "wasm32" {
 				p = appendp(p, AI32WrapI64)
 				p = appendp(p, AI32Store, constAddr(0))
 			} else {
@@ -488,24 +511,39 @@ func preprocess(ctxt *obj.Link, s *obj.LSym, newprog obj.ProgAlloc) {
 			switch call.To.Type {
 			case obj.TYPE_MEM:
 				if !notUsePC_B[call.To.Sym.Name] {
-					// Set PC_B parameter to function entry.
-					p = appendp(p, AI32Const, constAddr(0))
+					if ctxt.Arch.Name == "wasm32" {
+						// Set PC_B parameter to callee's base PC.
+						p = appendp(p, AI32Const, obj.Addr{Type: obj.TYPE_ADDR, Name: obj.NAME_EXTERN, Sym: call.To.Sym})
+					} else {
+						// Set PC_B parameter to function entry.
+						p = appendp(p, AI32Const, constAddr(0))
+					}
 				}
 				p = appendp(p, ACall, call.To)
 
 			case obj.TYPE_NONE:
-				// (target PC is on stack)
-				p = appendp(p, AI64Const, constAddr(16)) // only needs PC_F bits (16-63), PC_B bits (0-15) are zero
-				p = appendp(p, AI64ShrU)
-				p = appendp(p, AI32WrapI64)
+				// (target PC is on stack as i64)
+				if ctxt.Arch.Name == "wasm32" {
+					// Pass full entry PC as PC_B, shift to get table index.
+					p = appendp(p, AI32WrapI64)             // truncate to 32-bit PC
+					p = appendp(p, ASet, regAddr(REG_PC_B)) // save full PC
+					p = appendp(p, AGet, regAddr(REG_PC_B)) // push as PC_B param
+					p = appendp(p, AGet, regAddr(REG_PC_B)) // push again for table index
+					p = appendp(p, AI32Const, constAddr(int64(ctxt.Arch.WasmPCBBits)))
+					p = appendp(p, AI32ShrU)
+				} else {
+					p = appendp(p, AI64Const, constAddr(int64(ctxt.Arch.WasmPCBBits)))
+					p = appendp(p, AI64ShrU)
+					p = appendp(p, AI32WrapI64)
 
-				// Set PC_B parameter to function entry.
-				// We need to push this before pushing the target PC_F,
-				// so temporarily pop PC_F, using our PC_B as a
-				// scratch register, and push it back after pushing 0.
-				p = appendp(p, ASet, regAddr(REG_PC_B))
-				p = appendp(p, AI32Const, constAddr(0))
-				p = appendp(p, AGet, regAddr(REG_PC_B))
+					// Set PC_B parameter to function entry.
+					// We need to push this before pushing the target PC_F,
+					// so temporarily pop PC_F, using our PC_B as a
+					// scratch register, and push it back after pushing 0.
+					p = appendp(p, ASet, regAddr(REG_PC_B))
+					p = appendp(p, AI32Const, constAddr(0))
+					p = appendp(p, AGet, regAddr(REG_PC_B))
+				}
 
 				p = appendp(p, ACallIndirect)
 
@@ -540,8 +578,13 @@ func preprocess(ctxt *obj.Link, s *obj.LSym, newprog obj.ProgAlloc) {
 			}
 
 			if ret.To.Type == obj.TYPE_MEM {
-				// Set PC_B parameter to function entry.
-				p = appendp(p, AI32Const, constAddr(0))
+				if ctxt.Arch.Name == "wasm32" {
+					// Set PC_B parameter to callee's base PC.
+					p = appendp(p, AI32Const, obj.Addr{Type: obj.TYPE_ADDR, Name: obj.NAME_EXTERN, Sym: ret.To.Sym})
+				} else {
+					// Set PC_B parameter to function entry.
+					p = appendp(p, AI32Const, constAddr(0))
+				}
 
 				// low-level WebAssembly call to function
 				p = appendp(p, ACall, ret.To)
@@ -718,6 +761,17 @@ func preprocess(ctxt *obj.Link, s *obj.LSym, newprog obj.ProgAlloc) {
 			for _, b := range unwindExitBranches {
 				b.To = obj.Addr{Type: obj.TYPE_BRANCH, Val: p}
 			}
+		}
+		if ctxt.Arch.Name == "wasm32" && numResumePoints > 0 {
+			// On wasm32, PC_B carries the full PC value (from wasm_pc_f_loop
+			// or the callee's base PC for direct calls). Subtract this
+			// function's base PC to recover the actual resume point index.
+			// This must happen BEFORE the entryPointLoop so that intra-function
+			// branches (which set PC_B to a raw resume point) don't re-subtract.
+			p = appendp(p, AGet, regAddr(REG_PC_B))
+			p = appendp(p, AI32Const, obj.Addr{Type: obj.TYPE_ADDR, Name: obj.NAME_EXTERN, Sym: s})
+			p = appendp(p, AI32Sub)
+			p = appendp(p, ASet, regAddr(REG_PC_B))
 		}
 		if len(entryPointLoopBranches) > 0 {
 			p = appendp(p, ALoop) // entryPointLoop, used to jump between basic blocks
@@ -979,14 +1033,18 @@ func genWasmExportWrapper(ctxt *obj.Link, s *obj.LSym, appendp func(p *obj.Prog,
 		p = appendp(p, AI64Store, constAddr(0))
 	}
 	// Set PC_B parameter to function entry
-	p = appendp(p, AI32Const, constAddr(0))
+	if ctxt.Arch.Name == "wasm32" {
+		p = appendp(p, AI32Const, obj.Addr{Type: obj.TYPE_ADDR, Name: obj.NAME_EXTERN, Sym: we.WrappedSym})
+	} else {
+		p = appendp(p, AI32Const, constAddr(0))
+	}
 	p = appendp(p, ACall, obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: we.WrappedSym})
 	// Return value is on the top of the stack, indicating whether to unwind the Wasm stack.
 	// In the unwinding case, we call wasm_pc_f_loop_export to handle stack switch and rewinding,
 	// until a normal return (non-unwinding) back to this function.
 	p = appendp(p, AIf)
 	p = appendp(p, AI64Const, retAddr)
-	p = appendp(p, AI64Const, constAddr(16))
+	p = appendp(p, AI64Const, constAddr(int64(ctxt.Arch.WasmPCBBits)))
 	p = appendp(p, AI64ShrU)
 	p = appendp(p, AI32WrapI64)
 	p = appendp(p, ACall, obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: wasm_pc_f_loop_export})
@@ -1100,11 +1158,24 @@ func assemble(ctxt *obj.Link, s *obj.LSym, newprog obj.ProgAlloc) {
 	case "_rt0_wasm_js", "_rt0_wasm_wasip1", "_rt0_wasm_wasip1_lib",
 		"_rt0_wasm32_wasip1", "_rt0_wasm32_wasip1_lib",
 		"wasm_export_run", "wasm_export_resume", "wasm_export_getsp",
-		"wasm_pc_f_loop", "runtime.wasmDiv", "runtime.wasmTruncS", "runtime.wasmTruncU", "memeqbody":
+		"runtime.wasmDiv", "runtime.wasmTruncS", "runtime.wasmTruncU", "memeqbody":
 		varDecls = []*varDecl{}
 		useAssemblyRegMap()
+	case "wasm_pc_f_loop":
+		// wasm32 uses R0 as a temp; wasm has no locals.
+		if ctxt.Arch.Name == "wasm32" {
+			varDecls = []*varDecl{{count: 1, typ: i32}}
+		} else {
+			varDecls = []*varDecl{}
+		}
+		useAssemblyRegMap()
 	case "wasm_pc_f_loop_export":
-		varDecls = []*varDecl{{count: 2, typ: i32}}
+		// wasm32 uses R1, R2, R3; wasm uses R1, R2.
+		if ctxt.Arch.Name == "wasm32" {
+			varDecls = []*varDecl{{count: 3, typ: i32}}
+		} else {
+			varDecls = []*varDecl{{count: 2, typ: i32}}
+		}
 		useAssemblyRegMap()
 	case "memchr", "memcmp":
 		varDecls = []*varDecl{{count: 2, typ: i32}}
