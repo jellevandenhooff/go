@@ -146,12 +146,23 @@ const (
 )
 
 const (
-	// This is a special wasm module name that when used as the module name
+	// GojsModule is a special wasm module name that when used as the module name
 	// in //go:wasmimport will cause the generated code to pass the stack pointer
 	// directly to the imported function. In other words, any function that
 	// uses the gojs module understands the internal Go WASM ABI directly.
 	GojsModule = "gojs"
+
+	// GojsModule32 is the module name used for GOARCH=wasm32. The wasm32 ABI
+	// has different stack frame offsets (4-byte pointers vs 8-byte), so the
+	// JavaScript host provides a separate implementation under this name.
+	GojsModule32 = "gojs32"
 )
+
+// IsGojsModule reports whether the given module name is a gojs-style module
+// (either "gojs" for wasm or "gojs32" for wasm32).
+func IsGojsModule(module string) bool {
+	return module == GojsModule || module == GojsModule32
+}
 
 func instinit(ctxt *obj.Link) {
 	morestack = ctxt.Lookup("runtime.morestack")
@@ -778,7 +789,7 @@ func genWasmImportWrapper(s *obj.LSym, appendp func(p *obj.Prog, as obj.As, args
 	// indicates that the called function understands the Go stack-based call convention
 	// so we just pass the stack pointer to it, knowing it will read the params directly
 	// off the stack and push the results into memory based on the stack pointer.
-	if wi.Module == GojsModule {
+	if IsGojsModule(wi.Module) {
 		// The called function has a signature of 'func(sp int)'. It has access to the memory
 		// value somewhere to be able to address the memory based on the "sp" value.
 

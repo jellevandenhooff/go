@@ -323,11 +323,16 @@ func writeImportSec(ctxt *ld.Link, hostImports []*wasmFunc) {
 
 	writeUleb128(ctxt.Out, uint64(len(hostImports))) // number of imports
 	for _, fn := range hostImports {
-		if fn.Module != "" {
-			writeName(ctxt.Out, fn.Module)
-		} else {
-			writeName(ctxt.Out, wasm.GojsModule) // provided by the import object in wasm_exec.js
+		module := fn.Module
+		if module == "" {
+			module = wasm.GojsModule
 		}
+		// For wasm32, rewrite "gojs" → "gojs32" so the JavaScript host
+		// can provide separate implementations with different ABI offsets.
+		if module == wasm.GojsModule && buildcfg.GOARCH == "wasm32" {
+			module = wasm.GojsModule32
+		}
+		writeName(ctxt.Out, module) // provided by the import object in wasm_exec.js
 		writeName(ctxt.Out, fn.Name)
 		ctxt.Out.WriteByte(0x00) // func import
 		writeUleb128(ctxt.Out, uint64(fn.Type))
@@ -449,7 +454,14 @@ func writeExportSec(ctxt *ld.Link, ldr *loader.Loader, lenHostImports int) {
 		ctxt.Out.WriteByte(0x02)      // mem export
 		writeUleb128(ctxt.Out, 0)     // memidx
 	case "js":
-		writeUleb128(ctxt.Out, uint64(4+len(ldr.WasmExports))) // number of exports
+		numExports := 4 + len(ldr.WasmExports)
+		// For wasm32, export the rt0 entry point as a marker for arch detection.
+		rt0Marker := fmt.Sprintf("_rt0_%s_js", buildcfg.GOARCH)
+		rt0MarkerSym := ldr.Lookup(rt0Marker, 0)
+		if rt0MarkerSym != 0 {
+			numExports++
+		}
+		writeUleb128(ctxt.Out, uint64(numExports)) // number of exports
 		for _, name := range []string{"run", "resume", "getsp"} {
 			s := ldr.Lookup("wasm_export_"+name, 0)
 			if s == 0 {
@@ -457,6 +469,12 @@ func writeExportSec(ctxt *ld.Link, ldr *loader.Loader, lenHostImports int) {
 			}
 			idx := uint32(lenHostImports) + uint32(ldr.SymValue(s)>>16) - funcValueOffset
 			writeName(ctxt.Out, name)           // inst.exports.run/resume/getsp in wasm_exec.js
+			ctxt.Out.WriteByte(0x00)            // func export
+			writeUleb128(ctxt.Out, uint64(idx)) // funcidx
+		}
+		if rt0MarkerSym != 0 {
+			idx := uint32(lenHostImports) + uint32(ldr.SymValue(rt0MarkerSym)>>16) - funcValueOffset
+			writeName(ctxt.Out, rt0Marker)
 			ctxt.Out.WriteByte(0x00)            // func export
 			writeUleb128(ctxt.Out, uint64(idx)) // funcidx
 		}

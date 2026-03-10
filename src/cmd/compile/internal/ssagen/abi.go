@@ -538,7 +538,7 @@ func setupWasmImport(f *ir.Func) {
 		Module: f.WasmImport.Module,
 		Name:   f.WasmImport.Name,
 	}
-	if wi.Module == wasm.GojsModule {
+	if wasm.IsGojsModule(wi.Module) {
 		// Functions that are imported from the "gojs" module use a special
 		// ABI that just accepts the stack pointer.
 		// Example:

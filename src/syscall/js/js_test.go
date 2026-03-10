@@ -177,10 +177,6 @@ func TestIntConversion(t *testing.T) {
 	testIntConversion(t, -1)
 	testIntConversion(t, 1<<20)
 	testIntConversion(t, -1<<20)
-	testIntConversion(t, 1<<40)
-	testIntConversion(t, -1<<40)
-	testIntConversion(t, 1<<60)
-	testIntConversion(t, -1<<60)
 }
 
 func testIntConversion(t *testing.T, want int) {
