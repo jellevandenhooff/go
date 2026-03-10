@@ -540,6 +540,12 @@ func (v Value) Int() int {
 	return int(v.float("Value.Int"))
 }
 
+// Int64 returns the value v truncated to an int64.
+// It panics if v is not a JavaScript number.
+func (v Value) Int64() int64 {
+	return int64(v.float("Value.Int64"))
+}
+
 // Bool returns the value v as a bool.
 // It panics if v is not a JavaScript boolean.
 func (v Value) Bool() bool {

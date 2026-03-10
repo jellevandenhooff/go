@@ -188,16 +188,16 @@ func setStat(st *Stat_t, jsSt js.Value) {
 	st.Uid = uint32(jsSt.Get("uid").Int())
 	st.Gid = uint32(jsSt.Get("gid").Int())
 	st.Rdev = int64(jsSt.Get("rdev").Int())
-	st.Size = int64(jsSt.Get("size").Int())
+	st.Size = jsSt.Get("size").Int64()
 	st.Blksize = int32(jsSt.Get("blksize").Int())
 	st.Blocks = int32(jsSt.Get("blocks").Int())
-	atime := int64(jsSt.Get("atimeMs").Int())
+	atime := jsSt.Get("atimeMs").Int64()
 	st.Atime = atime / 1000
 	st.AtimeNsec = (atime % 1000) * 1000000
-	mtime := int64(jsSt.Get("mtimeMs").Int())
+	mtime := jsSt.Get("mtimeMs").Int64()
 	st.Mtime = mtime / 1000
 	st.MtimeNsec = (mtime % 1000) * 1000000
-	ctime := int64(jsSt.Get("ctimeMs").Int())
+	ctime := jsSt.Get("ctimeMs").Int64()
 	st.Ctime = ctime / 1000
 	st.CtimeNsec = (ctime % 1000) * 1000000
 }
